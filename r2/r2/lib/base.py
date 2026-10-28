@@ -29,12 +29,12 @@ from webob.exc import HTTPException, status_map
 from r2.lib.filters import spaceCompress, _force_unicode
 from r2.lib.template_helpers import get_domain
 from r2.lib.utils import Agent
-from utils import string2js, read_http_date
+from .utils import string2js, read_http_date
 
 import re, hashlib
-from Cookie import CookieError
-from urllib import quote
-import urllib2
+from http.cookies import CookieError
+from urllib.parse import quote
+import urllib.request, urllib.error, urllib.parse
 import sys
 
 
@@ -205,7 +205,7 @@ class BaseController(WSGIController):
 
         if u.is_reddit_url():
             # make sure to pass the port along if not 80
-            if not kw.has_key('port'):
+            if 'port' not in kw:
                 kw['port'] = request.port
 
             # make sure the extensions agree with the current page
@@ -247,12 +247,12 @@ class BaseController(WSGIController):
         response.headers['Location'] = dest
 
 
-class EmbedHandler(urllib2.BaseHandler, urllib2.HTTPHandler,
-                   urllib2.HTTPErrorProcessor, urllib2.HTTPDefaultErrorHandler):
+class EmbedHandler(urllib.request.BaseHandler, urllib.request.HTTPHandler,
+                   urllib2.HTTPErrorProcessor, urllib.request.HTTPDefaultErrorHandler):
 
     def http_redirect(self, req, fp, code, msg, hdrs):
         to = hdrs['Location']
-        h = urllib2.HTTPRedirectHandler()
+        h = urllib.request.HTTPRedirectHandler()
         r = h.redirect_request(req, fp, code, msg, hdrs, to)
         return embedopen.open(r)
 
@@ -261,10 +261,10 @@ class EmbedHandler(urllib2.BaseHandler, urllib2.HTTPHandler,
     http_error_303 = http_redirect
     http_error_307 = http_redirect
 
-embedopen = urllib2.OpenerDirector()
+embedopen = urllib.request.OpenerDirector()
 embedopen.add_handler(EmbedHandler())
 
 def proxyurl(url):
-    r = urllib2.Request(url, None, {})
+    r = urllib.request.Request(url, None, {})
     content = embedopen.open(r).read()
     return content

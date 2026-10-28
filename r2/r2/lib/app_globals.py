@@ -21,10 +21,10 @@
 ###############################################################################
 
 from datetime import datetime
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 import base64
-import ConfigParser
+import configparser
 import locale
 import json
 import logging
@@ -85,6 +85,7 @@ from r2.lib.zookeeper import (
     LiveConfig,
     IPNetworkLiveList,
 )
+import importlib
 
 
 LIVE_CONFIG_NODE = "/config/live"
@@ -115,7 +116,7 @@ def extract_live_config(config, plugins):
 
 
 def _decode_secrets(secrets):
-    return {key: base64.b64decode(value) for key, value in secrets.iteritems()}
+    return {key: base64.b64decode(value) for key, value in secrets.items()}
 
 
 def extract_secrets(config):
@@ -146,7 +147,7 @@ class PermissionFilteredEmployeeList(object):
 
     def __iter__(self):
         return (username
-                for username, permission in self.config["employees"].iteritems()
+                for username, permission in self.config["employees"].items()
                 if permission == self.type)
 
     def __getitem__(self, key):
@@ -462,7 +463,7 @@ class Globals(object):
         # the sys.path that was current when the master process was spawned
         # meaning that new plugins will be picked up on regular app reload
         # rather than having to restart the master process as well.
-        reload(site)
+        importlib.reload(site)
         self.pkg_resources_working_set = pkg_resources.WorkingSet()
 
         self.config = ConfigValueParser(global_conf)
@@ -493,7 +494,7 @@ class Globals(object):
         self.languages, self.lang_name = get_active_langs(
             config, default_lang=self.lang)
 
-        all_languages = self.lang_name.keys()
+        all_languages = list(self.lang_name.keys())
         all_languages.sort()
         self.all_languages = all_languages
         
@@ -639,11 +640,11 @@ class Globals(object):
         if not self.media_domain:
             self.media_domain = self.domain
         if self.media_domain == self.domain:
-            print >> sys.stderr, ("Warning: g.media_domain == g.domain. " +
-                   "This may give untrusted content access to user cookies")
+            print(("Warning: g.media_domain == g.domain. " +
+                   "This may give untrusted content access to user cookies"), file=sys.stderr)
         if self.oauth_domain == self.domain:
-            print >> sys.stderr, ("Warning: g.oauth_domain == g.domain. "
-                    "CORS requests to g.domain will be allowed")
+            print(("Warning: g.oauth_domain == g.domain. "
+                    "CORS requests to g.domain will be allowed"), file=sys.stderr)
 
         for arg in sys.argv:
             tokens = arg.split("=")
@@ -679,7 +680,7 @@ class Globals(object):
 
         # Compile ratelimit regexs
         user_agent_ratelimit_regexes = {}
-        for agent_re, limit in self.user_agent_ratelimit_regexes.iteritems():
+        for agent_re, limit in self.user_agent_ratelimit_regexes.items():
             user_agent_ratelimit_regexes[re.compile(agent_re)] = limit
         self.user_agent_ratelimit_regexes = user_agent_ratelimit_regexes
 
@@ -698,7 +699,7 @@ class Globals(object):
             reduced_data_node="/throttles_reduced",
         )
 
-        parser = ConfigParser.RawConfigParser()
+        parser = configparser.RawConfigParser()
         parser.optionxform = str
         parser.read([self.config["__file__"]])
 
@@ -723,7 +724,7 @@ class Globals(object):
         # Store which OAuth clients employees may use, the keys are just for
         # readability.
         self.employee_approved_clients = \
-            self.live_config["employee_approved_clients"].values()
+            list(self.live_config["employee_approved_clients"].values())
 
         self.startup_timer.intermediate("zookeeper")
 
@@ -924,7 +925,7 @@ class Globals(object):
         # around 'cache_chains' without being able to call getattr on
         # 'g'
         def reset_caches():
-            for name, chain in cache_chains.iteritems():
+            for name, chain in cache_chains.items():
                 if isinstance(chain, TransitionalCache):
                     chain = chain.read_chain
 
@@ -989,7 +990,7 @@ class Globals(object):
                 revision = subprocess.check_output(["git",
                                                     "--git-dir", git_dir,
                                                     "rev-parse", "HEAD"])
-            except subprocess.CalledProcessError, e:
+            except subprocess.CalledProcessError as e:
                 self.log.warning("Unable to fetch git revision: %r", e)
             else:
                 self.versions[repo_name] = revision.rstrip()
@@ -1013,7 +1014,7 @@ class Globals(object):
                           'pool_size', 'max_overflow')
         for db_name in self.databases:
             conf_params = ConfigValue.to_iter(self.config.raw_data[db_name + '_db'])
-            params = dict(zip(db_param_names, conf_params))
+            params = dict(list(zip(db_param_names, conf_params)))
             if params['db_user'] == "*":
                 params['db_user'] = self.db_user
             if params['db_pass'] == "*":
@@ -1049,7 +1050,7 @@ class Globals(object):
             return params, flags
 
         prefix = 'db_table_'
-        for k, v in self.config.raw_data.iteritems():
+        for k, v in self.config.raw_data.items():
             if not k.startswith(prefix):
                 continue
 

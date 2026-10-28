@@ -19,17 +19,17 @@
 # All portions of the code written by reddit are Copyright (c) 2006-2015 reddit
 # Inc. All Rights Reserved.
 ###############################################################################
-import cPickle as pickle
+import pickle as pickle
 from datetime import datetime, timedelta
 import functools
-import httplib
+import http.client
 import json
 from lxml import etree
 from pylons import tmpl_context as c
 from pylons import app_globals as g
 import socket
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import l2cs
 
@@ -105,7 +105,7 @@ class CloudSearchUploader(object):
         add = etree.Element("add", id=thing._fullname, version=str(version),
                             lang="en")
 
-        for field_name, value in self.fields(thing).iteritems():
+        for field_name, value in self.fields(thing).items():
             field = etree.SubElement(add, "field", name=field_name)
             field.text = safe_xml_str(value)
 
@@ -207,11 +207,11 @@ class CloudSearchUploader(object):
                 delta=len(warnings))
 
         if not quiet:
-            print "%s Changes: +%i -%i" % (self.__class__.__name__,
-                                           adds, deletes)
+            print("%s Changes: +%i -%i" % (self.__class__.__name__,
+                                           adds, deletes))
             if len(warnings):
-                print "%s Warnings: %s" % (self.__class__.__name__,
-                                           "; ".join(warnings))
+                print("%s Warnings: %s" % (self.__class__.__name__,
+                                           "; ".join(warnings)))
 
         return cs_time
 
@@ -223,7 +223,7 @@ class CloudSearchUploader(object):
         Raises SearchHTTPError if the endpoint indicates a failure
         '''
         responses = []
-        connection = httplib.HTTPConnection(
+        connection = http.client.HTTPConnection(
             self.doc_api, port=80, timeout=_TIMEOUT)
         chunker = chunk_xml(docs)
         try:
@@ -310,7 +310,7 @@ def chunk_xml(xml, depth=0):
         yield data
     else:
         depth += 1
-        print "WARNING: Chunking (depth=%s)" % depth
+        print("WARNING: Chunking (depth=%s)" % depth)
         half = len(xml) / 2
         left_half = xml # for ease of reading
         right_half = etree.Element("batch")
@@ -346,11 +346,11 @@ def _run_changed(msgs, chan):
 
     totaltime = (datetime.now(g.tz) - start).total_seconds()
 
-    print ("%s: %d messages in %.2fs seconds (%.2fs secs waiting on "
+    print(("%s: %d messages in %.2fs seconds (%.2fs secs waiting on "
            "cloudsearch); %d duplicates, %s remaining)" %
            (start, len(changed), totaltime, cloudsearch_time,
             len(changed) - len(link_fns | sr_fns),
-            msgs[-1].delivery_info.get('message_count', 'unknown')))
+            msgs[-1].delivery_info.get('message_count', 'unknown'))))
 
 
 def run_changed(drain=False, min_size=500, limit=1000, sleep_time=10,
@@ -391,8 +391,8 @@ def rebuild_link_index(start_at=None, sleeptime=1, cls=Link,
         for x in range(5):
             try:
                 uploader.inject()
-            except httplib.HTTPException as err:
-                print "Got %s, sleeping %s secs" % (err, x)
+            except http.client.HTTPException as err:
+                print("Got %s, sleeping %s secs" % (err, x))
                 time.sleep(x)
                 continue
             else:
@@ -400,7 +400,7 @@ def rebuild_link_index(start_at=None, sleeptime=1, cls=Link,
         else:
             raise err
         last_update = chunk[-1]
-        print "last updated %s" % last_update._fullname
+        print("last updated %s" % last_update._fullname)
         time.sleep(sleeptime)
 
 
@@ -414,9 +414,9 @@ rebuild_subreddit_index = functools.partial(rebuild_link_index,
 
 def test_run_link(start_link, count=1000):
     '''Inject `count` number of links, starting with `start_link`'''
-    if isinstance(start_link, basestring):
+    if isinstance(start_link, str):
         start_link = int(start_link, 36)
-    links = Link._byID(range(start_link - count, start_link), data=True,
+    links = Link._byID(list(range(start_link - count, start_link)), data=True,
                        return_dict=False)
     uploader = LinkUploader(g.CLOUDSEARCH_DOC_API, things=links)
     return uploader.inject()
@@ -424,7 +424,7 @@ def test_run_link(start_link, count=1000):
 
 def test_run_srs(*sr_names):
     '''Inject Subreddits by name into the index'''
-    srs = Subreddit._by_name(sr_names).values()
+    srs = list(Subreddit._by_name(sr_names).values())
     uploader = SubredditUploader(g.CLOUDSEARCH_SUBREDDIT_DOC_API, things=srs)
     return uploader.inject()
 
@@ -448,7 +448,7 @@ def basic_query(query=None, bq=None, faceting=None, size=1000,
     if record_stats:
         timer = g.stats.get_timer("providers.cloudsearch")
         timer.start()
-    connection = httplib.HTTPConnection(search_api, port=80, timeout=_TIMEOUT)
+    connection = http.client.HTTPConnection(search_api, port=80, timeout=_TIMEOUT)
     try:
         connection.request('GET', path)
         resp = connection.getresponse()
@@ -515,17 +515,17 @@ def _encode_query(query, bq, faceting, size, start, rank, rank_expressions,
     if rank:
         params["rank"] = rank
     if rank_expressions:
-        for rank, expression in rank_expressions.iteritems():
+        for rank, expression in rank_expressions.items():
             params['rank-%s' % rank] = expression
     if faceting:
-        params["facet"] = ",".join(faceting.iterkeys())
-        for facet, options in faceting.iteritems():
+        params["facet"] = ",".join(iter(faceting.keys()))
+        for facet, options in faceting.items():
             params["facet-%s-top-n" % facet] = options.get("count", 20)
             if "sort" in options:
                 params["facet-%s-sort" % facet] = options["sort"]
     if return_fields:
         params["return-fields"] = ",".join(return_fields)
-    encoded_query = urllib.urlencode(params)
+    encoded_query = urllib.parse.urlencode(params)
     path = _SEARCH + encoded_query
     return path
 
@@ -547,12 +547,12 @@ class CloudSearchQuery(object):
             raise ValueError("Unknown search syntax: %s" % syntax)
         self.syntax = syntax
 
-        self.query = filters._force_unicode(query or u'')
+        self.query = filters._force_unicode(query or '')
 
         # parsed query
         self.converted_data = None
-        self.q = u''
-        self.bq = u''
+        self.q = ''
+        self.bq = ''
 
         # filters
         self.sr = sr
@@ -615,7 +615,7 @@ class CloudSearchQuery(object):
     def preprocess_query(self, query):
         return query
 
-    def customize_query(self, bq=u''):
+    def customize_query(self, bq=''):
         return bq
 
     @classmethod
@@ -625,7 +625,7 @@ class CloudSearchQuery(object):
             return '(and ' + ' '.join(queries) + ')'
         elif queries:
             return queries[0]
-        return u''
+        return ''
 
     def __repr__(self):
         '''Return a string representation of this query'''
@@ -693,7 +693,7 @@ class CloudSearchQuery(object):
         hits = response['hits']['found']
         docs = [doc['id'] for doc in response['hits']['hit']]
         facets = response.get('facets', {})
-        for facet in facets.keys():
+        for facet in list(facets.keys()):
             values = facets[facet]['constraints']
             facets[facet] = values
 
@@ -728,7 +728,7 @@ class LinkSearchQuery(CloudSearchQuery):
     known_syntaxes = g.search_syntaxes
     default_syntax = "lucene"
 
-    def customize_query(self, bq=u''):
+    def customize_query(self, bq=''):
         queries = []
         if bq:
             queries = [bq]
@@ -799,7 +799,7 @@ class CloudSearchSubredditSearchQuery(CloudSearchQuery):
             query = '"%s" | %s' % (query, sr[1])
         return query
 
-    def customize_query(self, bq=u''):
+    def customize_query(self, bq=''):
         queries = []
         if bq:
             queries = [bq]

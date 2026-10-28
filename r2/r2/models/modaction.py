@@ -257,7 +257,7 @@ class ModAction(tdb_cassandra.UuidThing):
         Get a ColumnQuery that yields ModAction objects according to
         specified criteria.
         """
-        if after and isinstance(after, basestring):
+        if after and isinstance(after, str):
             after = cls._byID(UUID(after))
         elif after and isinstance(after, UUID):
             after = cls._byID(after)
@@ -317,12 +317,12 @@ class ModAction(tdb_cassandra.UuidThing):
                                      data=True)
 
         # get authors for targets that are Links or Comments
-        target_author_names = {target.author_id for target in targets.values()
+        target_author_names = {target.author_id for target in list(targets.values())
                                     if hasattr(target, "author_id")}
         target_authors = Account._byID(target_author_names, data=True)
 
         # get parent links for targets that are Comments
-        parent_link_names = {target.link_id for target in targets.values()
+        parent_link_names = {target.link_id for target in list(targets.values())
                                     if hasattr(target, "link_id")}
         parent_links = Link._byID(parent_link_names, data=True)
 
@@ -354,8 +354,7 @@ class ModAction(tdb_cassandra.UuidThing):
             request_path = request.path
 
             # make wrapped users for targets that are accounts
-            user_targets = filter(lambda target: isinstance(target, Account),
-                                  targets.values())
+            user_targets = [target for target in list(targets.values()) if isinstance(target, Account)]
             wrapped_user_targets = {user._fullname: WrappedUser(user)
                                     for user in user_targets}
 

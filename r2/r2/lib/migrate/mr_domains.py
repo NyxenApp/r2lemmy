@@ -81,7 +81,7 @@ def time_listings(times = ('all',)):
                 domains = []
             ups, downs = link.ups, link.downs
 
-            for tkey, oldest in oldests.iteritems():
+            for tkey, oldest in oldests.items():
                 if timestamp > oldest:
                     sc = score(ups, downs)
                     contr = controversy(ups, downs)
@@ -132,12 +132,12 @@ def store_keys(key, maxes):
             sort = 'controversial'
 
         q = queries.get_links(Subreddit._byID(sr_id), sort, time)
-        q._insert_tuples([tuple([item[-1]] + map(float, item[:-1]))
+        q._insert_tuples([tuple([item[-1]] + list(map(float, item[:-1])))
                     for item in maxes])
     elif key.startswith('domain/'):
         d_str, sort, time, domain = key.split('/')
         q = queries.get_domain_links(domain, sort, time)
-        q._insert_tuples([tuple([item[-1]] + map(float, item[:-1]))
+        q._insert_tuples([tuple([item[-1]] + list(map(float, item[:-1])))
                     for item in maxes])
 
 
@@ -146,11 +146,11 @@ def store_keys(key, maxes):
         account_id = int(account_id)
         fn = userrel_fns[key_type]
         q = fn(Account._byID(account_id))
-        q._insert_tuples([tuple([item[-1]] + map(float, item[:-1]))
+        q._insert_tuples([tuple([item[-1]] + list(map(float, item[:-1])))
                     for item in maxes])
 
 
 def write_permacache(fd = sys.stdin):
-    mr_tools.mr_reduce_max_per_key(lambda x: map(float, x[:-1]), num=1000,
+    mr_tools.mr_reduce_max_per_key(lambda x: list(map(float, x[:-1])), num=1000,
                                    post=store_keys,
                                    fd = fd)

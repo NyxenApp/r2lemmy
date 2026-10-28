@@ -58,7 +58,7 @@ class RedditDetectorBase(DetectorBase):
         if not match:
             match = self.version_regex.search(agent)
 
-        if match and 'version' in match.groupdict().keys():
+        if match and 'version' in list(match.groupdict().keys()):
             return match.group('version')
 
     def detect(self, agent, result):

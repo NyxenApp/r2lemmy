@@ -116,7 +116,7 @@ def update_blob(code, updates=None):
         raise ValueError("%s doesn't have access to payment_blob %s" %
                          (c.user._id, code))
 
-    for item, value in updates.iteritems():
+    for item, value in updates.items():
         blob[item] = value
     g.hardcache.set("payment_blob-%s" % code, blob, BLOB_TTL)
 
@@ -129,7 +129,7 @@ def has_blob(custom):
     return bool(blob)
 
 def dump_parameters(parameters):
-    for k, v in parameters.iteritems():
+    for k, v in parameters.items():
         g.log.info("IPN: %r = %r" % (k, v))
 
 def check_payment_status(payment_status):
@@ -880,7 +880,7 @@ def handle_stripe_error(fn):
             return fn(cls, form, *a, **kw)
         except stripe.CardError as e:
             form.set_text('.status',
-                          _('error: %(error)s') % {'error': e.message})
+                          _('error: %(error)s') % {'error': str(e)})
         except stripe.InvalidRequestError as e:
             form.set_text('.status', _('invalid request'))
         except stripe.APIConnectionError as e:
@@ -1106,7 +1106,7 @@ class StripeController(GoldPaymentController):
             # are validated on creation
             form.set_text('.status',
                           _('something bad happened, try again later'))
-            g.log.debug('POST_goldcharge: %s' % e.message)
+            g.log.debug('POST_goldcharge: %s' % str(e))
             return
 
         if period:

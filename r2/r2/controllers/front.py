@@ -52,9 +52,9 @@ from r2.lib.validator import *
 from r2.lib import jsontemplates
 import r2.lib.db.thing as thing
 from r2.lib.errors import errors, ForbiddenError
-from listingcontroller import ListingController
-from oauth2 import require_oauth2_scope
-from api_docs import api_doc, api_section
+from .listingcontroller import ListingController
+from .oauth2 import require_oauth2_scope
+from .api_docs import api_doc, api_section
 
 from pylons import request
 from pylons import tmpl_context as c
@@ -67,7 +67,7 @@ from operator import attrgetter
 import string
 import random as rand
 import re
-from urllib import quote_plus
+from urllib.parse import quote_plus
 
 class FrontController(RedditController):
 
@@ -681,7 +681,7 @@ class FrontController(RedditController):
         # add a choice for the automoderator account if it's not a mod
         if (g.automoderator_account and
                 all(mod.name != g.automoderator_account
-                    for mod in mods.values())):
+                    for mod in list(mods.values()))):
             automod_button = QueryButton(
                 g.automoderator_account,
                 g.automoderator_account,

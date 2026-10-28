@@ -23,8 +23,8 @@ import csv
 from collections import defaultdict
 import hashlib
 import re
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 
 from r2.controllers.reddit_base import (
     abort_with_error,
@@ -136,7 +136,7 @@ from r2.models.vote import Vote
 from r2.lib.merge import ConflictException
 
 from datetime import datetime, timedelta
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 
 class ApiminimalController(MinimalController):
@@ -195,7 +195,7 @@ class ApiController(RedditController):
 
         thing_classes = (Link, Comment, Subreddit)
         things = things or []
-        things = filter(lambda thing: isinstance(thing, thing_classes), things)
+        things = [thing for thing in things if isinstance(thing, thing_classes)]
 
         c.update_last_visit = False
         listing = wrap_links(things)
@@ -2835,7 +2835,7 @@ class ApiController(RedditController):
         if sr and feature.is_enabled('related_subreddits'):
             keyword_fields.append('related_subreddits')
 
-        kw = {k: v for k, v in kw.iteritems() if k in keyword_fields}
+        kw = {k: v for k, v in kw.items() if k in keyword_fields}
 
         public_description = kw.pop('public_description')
         description = kw.pop('description')
@@ -3004,7 +3004,7 @@ class ApiController(RedditController):
                     msg %= (sr.name, ', '.join(collections))
                     emailer.sales_email(msg)
 
-            for k, v in kw.iteritems():
+            for k, v in kw.items():
                 if getattr(sr, k, None) != v:
                     ModAction.create(sr, c.user, action='editsettings',
                                      details=k)
@@ -4926,9 +4926,9 @@ class ApiController(RedditController):
         if not form.has_error():
             try:
                 client.icon_url = media.upload_icon(icon_file, (72, 72))
-            except IOError, ex:
+            except IOError as ex:
                 c.errors.add(errors.BAD_IMAGE,
-                             msg_params=dict(message=ex.message),
+                             msg_params=dict(message=str(ex)),
                              field='file')
                 form.set_error(errors.BAD_IMAGE, 'file')
             else:
@@ -5060,8 +5060,8 @@ class ApiController(RedditController):
 
         """
 
-        srs = [sr for sr in srs.values() if not isinstance(sr, FakeSubreddit)]
-        to_omit = [sr for sr in to_omit.values() if not isinstance(sr, FakeSubreddit)]
+        srs = [sr for sr in list(srs.values()) if not isinstance(sr, FakeSubreddit)]
+        to_omit = [sr for sr in list(to_omit.values()) if not isinstance(sr, FakeSubreddit)]
 
         omit_id36s = [sr._id36 for sr in to_omit]
         rec_srs = recommender.get_recommendations(srs, to_omit=omit_id36s)
@@ -5076,7 +5076,7 @@ class ApiController(RedditController):
     def POST_rec_feedback(self, form, jquery, action, srs):
         if form.has_errors("type", errors.INVALID_OPTION):
             return self.abort404()
-        AccountSRFeedback.record_feedback(c.user, srs.values(), action)
+        AccountSRFeedback.record_feedback(c.user, list(srs.values()), action)
 
 
     @validatedForm(

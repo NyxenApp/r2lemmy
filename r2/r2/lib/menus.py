@@ -249,8 +249,9 @@ class NavMenu(Styled):
         maybe_selected = [o for o in self.options if o.is_selected()]
         if maybe_selected:
             # pick the button with the most restrictive pathing
-            maybe_selected.sort(lambda x, y:
-                                len(y.bare_path) - len(x.bare_path))
+            from functools import cmp_to_key
+            maybe_selected.sort(key=cmp_to_key(lambda x, y:
+                                len(y.bare_path) - len(x.bare_path)))
             return maybe_selected[0]
         elif self.default:
             #lookup the menu with the 'dest' that matches 'default'
@@ -560,7 +561,7 @@ class SortMenu(NavMenu):
         "random": operators.shuffled('_confidence'),
         "qa": operators.desc('_qa'),
     }
-    _reverse_mapping = {v: k for k, v in _mapping.iteritems()}
+    _reverse_mapping = {v: k for k, v in _mapping.items()}
 
     @classmethod
     def operator(cls, sort):

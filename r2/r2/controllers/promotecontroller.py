@@ -27,7 +27,7 @@ from babel.numbers import format_number
 import hashlib
 import hmac
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import mimetypes
 import os
 
@@ -285,7 +285,7 @@ class PromoteController(RedditController):
     @validate(VSponsor())
     def GET_new_promo(self):
         ads_images = _get_ads_images(c.user)
-        images = {k: v.get("url") for k, v in ads_images.iteritems()}
+        images = {k: v.get("url") for k, v in ads_images.items()}
 
         return PromotePage(title=_("create sponsored link"),
                            content=PromoteLinkNew(images),
@@ -368,7 +368,7 @@ class SponsorController(PromoteController):
             campaign_ids = PromotionWeights.get_campaign_ids(
                 start, end, author_id=owner._id)
             campaigns = PromoCampaign._byID(campaign_ids, data=True)
-            link_ids = {camp.link_id for camp in campaigns.itervalues()}
+            link_ids = {camp.link_id for camp in campaigns.values()}
             links.extend(Link._byID(link_ids, data=True, return_dict=False))
 
         if link_text is not None:
@@ -379,7 +379,7 @@ class SponsorController(PromoteController):
                 links_from_text = {}
 
             bad_links = [id36 for id36 in id36s if id36 not in links_from_text]
-            links.extend(links_from_text.values())
+            links.extend(list(links_from_text.values()))
 
         content = PromoteReport(links, link_text, owner_name, bad_links, start,
                                 end, group_by_date=grouping == "day")
@@ -543,12 +543,12 @@ class PromoteListingController(ListingController):
 
 
 class SponsorListingController(PromoteListingController):
-    titles = dict(PromoteListingController.titles.items() + {
+    titles = dict(list(PromoteListingController.titles.items()) + list({
         'underdelivered': N_('underdelivered promoted links'),
         'reported': N_('reported promoted links'),
         'house': N_('house promoted links'),
         'fraud': N_('fraud suspected promoted links'),
-    }.items())
+    }.items()))
     base_path = '/sponsor/promoted'
 
     @property
@@ -589,7 +589,7 @@ class SponsorListingController(PromoteListingController):
                 frontbutton = NavButton('FRONTPAGE', Frontpage.name,
                                         use_params=True,
                                         aliases=['/promoted/live_promos/%s' %
-                                                 urllib.quote(Frontpage.name)])
+                                                 urllib.parse.quote(Frontpage.name)])
                 buttons.append(frontbutton)
             except KeyError:
                 pass
@@ -976,7 +976,7 @@ class PromoteApiController(ApiController):
 
         # demangle URL in canonical way
         if url:
-            if isinstance(url, (unicode, str)):
+            if isinstance(url, str):
                 form.set_inputs(url=url)
             elif isinstance(url, tuple) or isinstance(url[0], Link):
                 # there's already one or more links with this URL, but

@@ -20,11 +20,11 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from account import *
-from link import *
-from vote import *
-from report import *
-from subreddit import DefaultSR, AllSR, Frontpage, Subreddit
+from .account import *
+from .link import *
+from .vote import *
+from .report import *
+from .subreddit import DefaultSR, AllSR, Frontpage, Subreddit
 from pylons import i18n, request
 from pylons import app_globals as g
 from pylons.i18n import _

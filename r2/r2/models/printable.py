@@ -71,13 +71,13 @@ class Printable(object):
             item.childlisting = CachedVariable("childlisting")
 
             score_fmt = getattr(item, "score_fmt", Score.number_only)
-            item.display_score = map(score_fmt, item.voting_score)
+            item.display_score = list(map(score_fmt, item.voting_score))
 
             if item.cachable:
                 item.render_score  = item.display_score
-                item.display_score = map(CachedVariable,
+                item.display_score = list(map(CachedVariable,
                                          ["scoredislikes", "scoreunvoted",
-                                          "scorelikes"])
+                                          "scorelikes"]))
 
         hooks.get_hook("add_props").call(items=wrapped)
 
@@ -101,7 +101,7 @@ class Printable(object):
 
         if style == 'htmllite':
             s.extend([c.bgcolor, c.bordercolor, 
-                      request.GET.has_key('style'),
+                      'style' in request.GET,
                       request.GET.get("expanded"),
                       getattr(wrapped, 'embed_voting_style', None)])
         return s

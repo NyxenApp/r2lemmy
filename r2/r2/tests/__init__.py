@@ -22,7 +22,7 @@
 
 import os
 import sys
-import Queue
+import queue
 from unittest import TestCase
 from mock import patch, MagicMock
 from collections import defaultdict
@@ -72,7 +72,7 @@ from r2.config.middleware import RedditApp
 # unfortunately, because of the deep intertwinded dependency we have in the
 # orm with app_globals, we unfortunately have to do some pylons-setup
 # at import time
-baseplate.events.EventQueue = Queue.Queue
+baseplate.events.EventQueue = queue.Queue
 wsgiapp = loadapp('config:test.ini', relative_to=conf_dir)
 pylons.app_globals._push_object(wsgiapp.config['pylons.app_globals'])
 pylons.config._push_object(wsgiapp.config)
@@ -96,7 +96,7 @@ def diff_dicts(d, expected, prefix=None):
     """
     prefix = prefix or []
     diffs = {}
-    for k in set(d.keys() + expected.keys()):
+    for k in set(list(d.keys()) + list(expected.keys())):
         current_prefix = prefix + [k]
         want = d.get(k)
         got = expected.get(k)
@@ -113,7 +113,7 @@ class DiffAssertionError(AssertionError):
         s = "\n".join(
             "\t{key}: {want} != {got}".format(
                 key=key, want=repr(want), got=repr(got),
-            ) for key, (want, got) in sorted(diffs.iteritems())
+            ) for key, (want, got) in sorted(diffs.items())
         )
         super(DiffAssertionError, self).__init__(
             "Mismatched ditionaries:\n%s" % s
@@ -234,7 +234,7 @@ class RedditTestCase(TestCase):
 
     def assert_same_dict(self, data, expected_data, prefix=None):
         prefix = prefix or []
-        for k in set(data.keys() + expected_data.keys()):
+        for k in set(list(data.keys()) + list(expected_data.keys())):
             current_prefix = prefix + [k]
             want = expected_data.get(k)
             got = data.get(k)
@@ -280,7 +280,7 @@ class RedditTestCase(TestCase):
 
         Since we do this all the time.  autpatch g with the provided kw.
         """
-        for k, v in kw.iteritems():
+        for k, v in kw.items():
             self.autopatch(g, k, v, create=not hasattr(g, k))
 
     def patch_liveconfig(self, k, v):
@@ -362,9 +362,9 @@ class RedditControllerTestCase(RedditTestCase):
         headers.setdefault('User-Agent', self.user_agent)
         if self.device_id:
             headers.setdefault('Client-Vendor-ID', self.device_id)
-        for k, v in self.additional_headers(headers, body).iteritems():
+        for k, v in self.additional_headers(headers, body).items():
             headers.setdefault(k, v)
-        headers = {k: v for k, v in headers.iteritems() if v is not None}
+        headers = {k: v for k, v in headers.items() if v is not None}
         return self.app.post(
             url_for(controller=self.CONTROLLER,
                     action=self.ACTIONS.get(action, action)),

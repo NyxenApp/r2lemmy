@@ -23,7 +23,7 @@ from r2.tests import RedditControllerTestCase
 from r2.lib.errors import error_list
 from r2.lib.unicode import _force_unicode
 from r2.models import Subreddit
-from common import LoginRegBase
+from .common import LoginRegBase
 
 
 class PostLoginRegTests(LoginRegBase, RedditControllerTestCase):

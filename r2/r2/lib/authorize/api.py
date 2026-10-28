@@ -31,8 +31,8 @@ http://developer.authorize.net/api/cim/
 """
 
 import re
-from httplib import HTTPSConnection
-from urlparse import urlparse
+from http.client import HTTPSConnection
+from urllib.parse import urlparse
 
 from BeautifulSoup import BeautifulStoneSoup
 from pylons import app_globals as g
@@ -87,6 +87,7 @@ class AuthorizeNetException(Exception):
 class TransactionError(Exception):
     def __init__(self, message):
         self.message = message
+        super(TransactionError, self).__init__(message)
 
 
 class DuplicateTransactionError(TransactionError):
@@ -94,6 +95,7 @@ class DuplicateTransactionError(TransactionError):
         self.transaction_id = transaction_id
         message = ('DuplicateTransactionError with transaction_id %d' %
                    transaction_id)
+        self.message = message
         super(DuplicateTransactionError, self).__init__(message)
 
 
@@ -112,14 +114,14 @@ class SimpleXMLObject(object):
     """
     _keys = []
     def __init__(self, **kw):
-        self._used_keys = self._keys if self._keys else kw.keys()
+        self._used_keys = self._keys if self._keys else list(kw.keys())
         for k in self._used_keys:
             if not hasattr(self, k):
                 setattr(self, k, kw.get(k, ""))
 
     @staticmethod
     def simple_tag(name, content, **attrs):
-        attrs = " ".join('%s="%s"' % (k, v) for k, v in attrs.iteritems())
+        attrs = " ".join('%s="%s"' % (k, v) for k, v in attrs.items())
         if attrs:
             attrs = " " + attrs
         return ("<%(name)s%(attrs)s>%(content)s</%(name)s>" %
@@ -131,7 +133,7 @@ class SimpleXMLObject(object):
             if isinstance(v, SimpleXMLObject):
                 v = v.toXML()
             elif v is not None:
-                v = unicode(v)
+                v = str(v)
                 if k not in _no_escape_list:
                     v = escape(v) # escape &, <, and >
             if v is not None:
@@ -152,7 +154,7 @@ class SimpleXMLObject(object):
         for k in cls._keys:
             d = data.find(k.lower())
             if d and d.contents:
-                kw[k] = unicode(d.contents[0])
+                kw[k] = str(d.contents[0])
         return cls(**kw)
 
 
@@ -306,7 +308,7 @@ class AuthorizeNetRequest(SimpleXMLObject):
         res = BeautifulStoneSoup(res, 
                                  markupMassage=False, 
                                  convertEntities=BeautifulStoneSoup.XML_ENTITIES)
-        if res.resultcode.contents[0] == u"Ok":
+        if res.resultcode.contents[0] == "Ok":
             return self.process_response(res)
         else:
             return self.process_error(res)
@@ -486,7 +488,7 @@ class CreateCustomerProfileTransactionRequest(AuthorizeNetRequest):
     @property
     def extraOptions(self):
         return "<![CDATA[%s]]>" % "&".join("%s=%s" % x
-                                            for x in self._extra.iteritems())
+                                            for x in self._extra.items())
 
     def process_response(self, res):
         return (True, self.package_response(res))
@@ -496,8 +498,8 @@ class CreateCustomerProfileTransactionRequest(AuthorizeNetRequest):
 
     def package_response(self, res):
         content = res.directresponse.contents[0]
-        s = Storage(zip(self.response_keys, content.split(',')))
-        for name, cast in self.response_types.iteritems():
+        s = Storage(list(zip(self.response_keys, content.split(','))))
+        for name, cast in self.response_types.items():
             try:
                 s[name] = cast(s[name])
             except ValueError:

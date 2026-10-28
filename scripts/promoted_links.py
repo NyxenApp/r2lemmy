@@ -82,7 +82,7 @@ def get_scheduled(date, sr_name=''):
 def get_campaign_pageviews(date, sr_name=''):
     # ads go live at hour=5
     start = datetime.datetime(date.year, date.month, date.day, 5, 0)
-    hours = [start + datetime.timedelta(hours=i) for i in xrange(24)]
+    hours = [start + datetime.timedelta(hours=i) for i in range(24)]
 
     traffic_cls = TargetedImpressionsByCodename
     codename_string = PC_PREFIX + '_%'
@@ -138,7 +138,7 @@ def compare_pageviews(daysago=0, verbose=False):
 
     scheduled = get_scheduled(date)
     pageviews_by_camp = get_campaign_pageviews(date)
-    campaigns = filter_campaigns(date, pageviews_by_camp.keys())
+    campaigns = filter_campaigns(date, list(pageviews_by_camp.keys()))
     actual = []
     for camp in campaigns:
         link_fullname = '%s_%s' % (LINK_PREFIX, to36(camp.link_id))
@@ -157,7 +157,7 @@ def compare_pageviews(daysago=0, verbose=False):
     for camp, link, bid in scheduled:
         if link not in actual_links:
             if verbose:
-                print '%s not found in actual, skipping' % link
+                print('%s not found in actual, skipping' % link)
             continue
 
         bid_by_link[link] += bid
@@ -167,36 +167,36 @@ def compare_pageviews(daysago=0, verbose=False):
         # not ideal: links shouldn't be here
         if link not in scheduled_links:
             if verbose:
-                print '%s not found in schedule, skipping' % link
+                print('%s not found in schedule, skipping' % link)
             continue
 
         pageviews_by_link[link] += pageviews
         total_pageviews += pageviews
 
     errors = []
-    for link, bid in sorted(bid_by_link.items(), key=lambda t: t[1]):
+    for link, bid in sorted(list(bid_by_link.items()), key=lambda t: t[1]):
         pageviews = pageviews_by_link.get(link, 0)
         expected = bid / total_bid
         realized = float(pageviews) / total_pageviews
         difference = (realized - expected) / expected
         errors.append(difference)
         if verbose:
-            print '%s - %s - %s - %s' % (link, expected, realized, difference)
+            print('%s - %s - %s - %s' % (link, expected, realized, difference))
 
     mean_error, min_error, max_error, stdev_error = error_statistics(errors)
 
-    print '%s' % date
-    print ('error %s max, %s min, %s +- %s' %
-           (max_error, min_error, mean_error, stdev_error))
-    print 'total bid %s' % total_bid
-    print ('pageviews for promoted links targeted only to frontpage %s' %
-           total_pageviews)
-    print ('frontpage pageviews for all promoted links %s' %
-           sum(pageviews_by_camp.values()))
-    print 'promoted eligible pageviews %s' % get_frontpage_pageviews(date)
+    print('%s' % date)
+    print(('error %s max, %s min, %s +- %s' %
+           (max_error, min_error, mean_error, stdev_error)))
+    print('total bid %s' % total_bid)
+    print(('pageviews for promoted links targeted only to frontpage %s' %
+           total_pageviews))
+    print(('frontpage pageviews for all promoted links %s' %
+           sum(pageviews_by_camp.values())))
+    print('promoted eligible pageviews %s' % get_frontpage_pageviews(date))
 
 
-PROMOS = [('promo_%s' % i, i + 1) for i in xrange(100)]
+PROMOS = [('promo_%s' % i, i + 1) for i in range(100)]
 
 
 def select_subset(n, weighted=False):
@@ -239,29 +239,29 @@ def benchmark(subsets=1440, picks=6945, weighted_subset=False,
 
     counts = {(name, weight): 0 for name, weight in PROMOS}
 
-    for i in xrange(subsets):
+    for i in range(subsets):
         subset = select_subset(subset_size, weighted=weighted_subset)
 
-        for j in xrange(picks):
+        for j in range(picks):
             name, weight = pick(subset, weighted=weighted_pick)
             counts[(name, weight)] += 1
 
     total_weight = sum(counts.values())
     errors = []
-    for name, weight in sorted(counts.keys(), key=lambda t: t[1]):
+    for name, weight in sorted(list(counts.keys()), key=lambda t: t[1]):
         count = counts[(name, weight)]
         actual = float(count) / (subsets * picks)
         expected = float(weight) / total_weight
         error = (actual - expected) / expected
         errors.append(error)
         if verbose:
-            print ('%s - expected: %s - actual: %s - error %s' %
-                   (name, expected, actual, error))
+            print(('%s - expected: %s - actual: %s - error %s' %
+                   (name, expected, actual, error)))
 
     mean_error, min_error, max_error, stdev_error = error_statistics(errors)
 
     if verbose:
-        print ('Error %s max, %s min, %s +- %s' %
-               (max_error, min_error, mean_error, stdev_error))
+        print(('Error %s max, %s min, %s +- %s' %
+               (max_error, min_error, mean_error, stdev_error)))
 
     return (max_error, min_error, mean_error, stdev_error)

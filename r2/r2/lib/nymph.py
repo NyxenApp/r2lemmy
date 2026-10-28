@@ -114,7 +114,7 @@ def _load_spritable_images(css_filename):
             images[image_hash].filenames.append(image_filename)
 
     # Sort images by filename to group the layout by names when possible.
-    return sorted(images.values(), key=lambda i: i.filenames[0])
+    return sorted(list(images.values()), key=lambda i: i.filenames[0])
 
 
 def _generate_sprite(images, sprite_path):
@@ -207,4 +207,4 @@ def spritify(css_filename, sprite_path):
 
 if __name__ == '__main__':
     import sys
-    print spritify(sys.argv[1], sys.argv[2])
+    print(spritify(sys.argv[1], sys.argv[2]))

@@ -202,7 +202,7 @@ def store_keys(key, maxes):
             sort = 'controversial'
 
         q = queries.get_links(Subreddit._byID(sr_id), sort, time)
-        insert_to_query(q, [tuple([item[-1]] + map(float, item[:-1]))
+        insert_to_query(q, [tuple([item[-1]] + list(map(float, item[:-1])))
                             for item in maxes])
 
     elif key.split('-')[0] in userrel_fns:
@@ -210,7 +210,7 @@ def store_keys(key, maxes):
         account_id = int(account_id)
         fn = userrel_fns[key_type]
         q = fn(Account._byID(account_id))
-        insert_to_query(q, [tuple([item[-1]] + map(float, item[:-1]))
+        insert_to_query(q, [tuple([item[-1]] + list(map(float, item[:-1])))
                             for item in maxes])
 
 def top1k_writefiles(dirname):
@@ -223,7 +223,7 @@ def top1k_writefiles(dirname):
         # 'ab/cd/thelisting.txt' (and this function would just return
         # the string 'ab/cd', so that you have the dirname that you
         # can create before os.path.joining to the filename)
-        h = md5(name).hexdigest()
+        h = md5(name.encode('utf-8')).hexdigest()
 
         last = 0
         dirs = []
@@ -253,11 +253,11 @@ def top1k_writefiles(dirname):
                 f.write('\t'.join(item))
                 f.write('\n')
         
-    mr_tools.mr_reduce_max_per_key(lambda x: map(float, x[:-1]), num=1000,
+    mr_tools.mr_reduce_max_per_key(lambda x: list(map(float, x[:-1])), num=1000,
                                    post=post)
 
 def top1k_writepermacache(fd = sys.stdin):
-    mr_tools.mr_reduce_max_per_key(lambda x: map(float, x[:-1]), num=1000,
+    mr_tools.mr_reduce_max_per_key(lambda x: list(map(float, x[:-1])), num=1000,
                                    post=store_keys,
                                    fd = fd)
 

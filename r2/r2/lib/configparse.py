@@ -83,7 +83,7 @@ class ConfigValue(object):
             try:
                 return choices[v]
             except KeyError:
-                raise ValueError("Unknown option for %r: %r not in %r" % (key, v, choices.keys()))
+                raise ValueError("Unknown option for %r: %r not in %r" % (key, v, list(choices.keys())))
         return parse_choice
 
     @staticmethod
@@ -119,7 +119,7 @@ class ConfigValueParser(dict):
 
     def add_spec(self, spec):
         new_keys = []
-        for parser, keys in spec.iteritems():
+        for parser, keys in spec.items():
             # keys can be either a list or a dict
             for key in keys:
                 assert key not in self.config_keys

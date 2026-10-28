@@ -61,9 +61,9 @@ try:
         uwebsafe_json as c_websafe_json
     def spaceCompress(text):
         try:
-            text = unicode(text, 'utf-8')
+            text = str(text, 'utf-8')
         except TypeError:
-            text = unicode(text)
+            text = str(text)
         return uspace_compress(text)
 except ImportError:
     c_websafe      = python_websafe
@@ -91,10 +91,10 @@ except ImportError:
         return res
 
 
-class _Unsafe(unicode):
+class _Unsafe(str):
     # Necessary so Wrapped instances with these can get cached
     def cache_key(self, style):
-        return unicode(self)
+        return str(self)
 
 
 def unsafe(text=''):
@@ -118,7 +118,7 @@ def conditional_websafe(text = ''):
         return _Unsafe(text)
     elif text is None:
         return ""
-    elif text.__class__ != unicode:
+    elif text.__class__ != str:
         text = _force_unicode(text)
     return c_websafe(text)
 
@@ -129,7 +129,7 @@ def mako_websafe(text=''):
 
 
 def websafe(text=''):
-    if text.__class__ != unicode:
+    if text.__class__ != str:
         text = _force_unicode(text)
     #wrap the response in _Unsafe so make_websafe doesn't unescape it
     return _Unsafe(c_websafe(text))
@@ -137,34 +137,34 @@ def websafe(text=''):
 
 # From https://github.com/django/django/blob/master/django/utils/html.py
 _js_escapes = {
-    ord('\\'): u'\\u005C',
-    ord('\''): u'\\u0027',
-    ord('"'): u'\\u0022',
-    ord('>'): u'\\u003E',
-    ord('<'): u'\\u003C',
-    ord('&'): u'\\u0026',
-    ord('='): u'\\u003D',
-    ord('-'): u'\\u002D',
-    ord(';'): u'\\u003B',
-    ord(u'\u2028'): u'\\u2028',
-    ord(u'\u2029'): u'\\u2029',
+    ord('\\'): '\\u005C',
+    ord('\''): '\\u0027',
+    ord('"'): '\\u0022',
+    ord('>'): '\\u003E',
+    ord('<'): '\\u003C',
+    ord('&'): '\\u0026',
+    ord('='): '\\u003D',
+    ord('-'): '\\u002D',
+    ord(';'): '\\u003B',
+    ord('\u2028'): '\\u2028',
+    ord('\u2029'): '\\u2029',
 }
 # Escape every ASCII character with a value less than 32.
-_js_escapes.update((ord('%c' % z), u'\\u%04X' % z) for z in range(32))
+_js_escapes.update((ord('%c' % z), '\\u%04X' % z) for z in range(32))
 
 
-def jssafe(text=u''):
+def jssafe(text=''):
     """Prevents text from breaking outside of string literals in JS"""
-    if text.__class__ != unicode:
+    if text.__class__ != str:
         text = _force_unicode(text)
     # wrap the response in _Unsafe so conditional_websafe doesn't touch it
     return _Unsafe(text.translate(_js_escapes))
 
 
 _json_escapes = {
-    ord('>'): u'\\u003E',
-    ord('<'): u'\\u003C',
-    ord('&'): u'\\u0026',
+    ord('>'): '\\u003E',
+    ord('<'): '\\u003C',
+    ord('&'): '\\u0026',
 }
 
 
@@ -279,16 +279,16 @@ def generate_table_of_contents(soup, prefix):
     level = 0
     previous = 0
     for header in headers:
-        contents = u''.join(header.findAll(text=True))
+        contents = ''.join(header.findAll(text=True))
         
         # In the event of an empty header, skip
         if not contents:
             continue
         
         # Convert html entities to avoid ugly header ids
-        aid = unicode(BeautifulSoup(contents, convertEntities=BeautifulSoup.XML_ENTITIES))
+        aid = str(BeautifulSoup(contents, convertEntities=BeautifulSoup.XML_ENTITIES))
         # Prefix with PREFIX_ to avoid ID conflict with the rest of the page
-        aid = u'%s_%s' % (prefix, aid.replace(" ", "_").lower())
+        aid = '%s_%s' % (prefix, aid.replace(" ", "_").lower())
         # Convert down to ascii replacing special characters with hex
         aid = str(title_re.sub(lambda c: '.%X' % ord(c.group()), aid))
         

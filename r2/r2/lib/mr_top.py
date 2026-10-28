@@ -53,7 +53,7 @@ data_fields_by_name = {
 
 
 def join_things(thing_type):
-    mr_tools.join_things(data_fields_by_name[thing_type].keys())
+    mr_tools.join_things(list(data_fields_by_name[thing_type].keys()))
 
 
 def _get_cutoffs(intervals):
@@ -70,7 +70,7 @@ def _get_cutoffs(intervals):
 def time_listings(intervals, thing_type):
     cutoff_by_interval = _get_cutoffs(intervals)
 
-    @mr_tools.dataspec_m_thing(*data_fields_by_name[thing_type].items())
+    @mr_tools.dataspec_m_thing(*list(data_fields_by_name[thing_type].items()))
     def process(thing):
         if thing.deleted:
             return
@@ -80,7 +80,7 @@ def time_listings(intervals, thing_type):
         thing_score = score(thing.ups, thing.downs)
         thing_controversy = controversy(thing.ups, thing.downs)
 
-        for interval, cutoff in cutoff_by_interval.iteritems():
+        for interval, cutoff in cutoff_by_interval.items():
             if thing.timestamp < cutoff:
                 continue
 
@@ -141,7 +141,7 @@ def store_keys(key, maxes):
     query._replace(item_tuples, lock=lock)
 
 def write_permacache(fd = sys.stdin):
-    mr_tools.mr_reduce_max_per_key(lambda x: map(float, x[:-1]), num=1000,
+    mr_tools.mr_reduce_max_per_key(lambda x: list(map(float, x[:-1])), num=1000,
                                    post=store_keys,
                                    fd = fd)
 
@@ -149,5 +149,5 @@ def reduce_listings(fd=sys.stdin):
     # like write_permacache, but just sends the reduced version of the listing
     # to stdout instead of to the permacache. It's handy for debugging to see
     # the final result before it's written out
-    mr_tools.mr_reduce_max_per_key(lambda x: map(float, x[:-1]), num=1000,
+    mr_tools.mr_reduce_max_per_key(lambda x: list(map(float, x[:-1])), num=1000,
                                    fd = fd)

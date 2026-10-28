@@ -269,7 +269,7 @@ class OAuth2Scope:
     # Special scope, granted implicitly to clients with app_type == "script"
     FULL_ACCESS = "*"
 
-    class InsufficientScopeError(StandardError):
+    class InsufficientScopeError(Exception):
         pass
 
     def __init__(self, scope_str=None, subreddits=None, scopes=None):
@@ -319,7 +319,7 @@ class OAuth2Scope:
 
     def details(self):
         if self.FULL_ACCESS in self.scopes:
-            scopes = self.scope_info.keys()
+            scopes = list(self.scope_info.keys())
         else:
             scopes = self.scopes
         return [(scope, self.scope_info[scope]) for scope in scopes]
@@ -412,7 +412,7 @@ class OAuth2Client(Token):
 
     @property
     def _developer_ids(self):
-        for k, v in self._t.iteritems():
+        for k, v in self._t.items():
             if k.startswith(self._developer_colname_prefix) and v:
                 try:
                     yield int(k[len(self._developer_colname_prefix):], 36)
@@ -490,8 +490,8 @@ class OAuth2Client(Token):
         except tdb_cassandra.NotFound:
             return []
 
-        clients = cls._byID(cba._values().keys())
-        return [client for client in clients.itervalues()
+        clients = cls._byID(list(cba._values().keys()))
+        return [client for client in clients.values()
                 if not client.deleted and client.has_developer(account)]
 
     @classmethod
@@ -504,7 +504,7 @@ class OAuth2Client(Token):
         access_tokens = [token for token in OAuth2AccessToken._by_user(account)
                          if token.check_valid()]
 
-        tokens = refresh_tokens.values()
+        tokens = list(refresh_tokens.values())
         tokens.extend(token for token in access_tokens
                       if token.refresh_token not in refresh_tokens)
 
@@ -531,7 +531,7 @@ class OAuth2Client(Token):
             else:
                 client_data['refresh_tokens'] += 1
 
-        for client_data in clients.itervalues():
+        for client_data in clients.values():
             client_data['scopes'] = OAuth2Scope.merge_scopes(client_data['scopes'])
 
         return clients
@@ -566,7 +566,7 @@ class OAuth2AuthorizationCode(ConsumableToken):
     """An OAuth2 authorization code for completing authorization flow"""
     token_size = 20
     _ttl = datetime.timedelta(minutes=10)
-    _defaults = dict(ConsumableToken._defaults.items() + [
+    _defaults = dict(list(ConsumableToken._defaults.items()) + [
                          ("client_id", ""),
                          ("redirect_uri", ""),
                          ("scope", ""),
@@ -700,8 +700,8 @@ class OAuth2AccessToken(Token):
         except tdb_cassandra.NotFound:
             return []
 
-        tokens = cls._byID(tba._values().keys())
-        return [token for token in tokens.itervalues() if token.check_valid()]
+        tokens = cls._byID(list(tba._values().keys()))
+        return [token for token in tokens.values() if token.check_valid()]
 
 class OAuth2AccessTokensByUser(tdb_cassandra.View):
     """Index listing the outstanding access tokens for an account."""
@@ -783,7 +783,7 @@ class PasswordResetToken(ConsumableToken):
 class AwardClaimToken(ConsumableToken):
     token_size = 20
     _ttl = datetime.timedelta(days=30)
-    _defaults = dict(ConsumableToken._defaults.items() + [
+    _defaults = dict(list(ConsumableToken._defaults.items()) + [
                          ("awardfullname", ""),
                          ("description", ""),
                          ("url", ""),

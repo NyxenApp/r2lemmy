@@ -292,7 +292,7 @@ class Target(object):
         if isinstance(target, Collection):
             self.collection = target
             self.is_collection = True
-        elif isinstance(target, basestring):
+        elif isinstance(target, str):
             self.subreddit_name = target
             self.is_collection = False
         else:
@@ -322,7 +322,7 @@ class Target(object):
             return self._subreddits
 
         sr_names = self.subreddit_names
-        srs = Subreddit._by_name(sr_names).values()
+        srs = list(Subreddit._by_name(sr_names).values())
         self._subreddits = srs
         return srs
 
@@ -437,7 +437,7 @@ class PromoCampaign(Thing):
 
         state = self.__dict__
         if "_target" in state:
-            state = {k: v for k, v in state.iteritems() if k != "_target"}
+            state = {k: v for k, v in state.items() if k != "_target"}
         return state
 
     @property
@@ -448,7 +448,7 @@ class PromoCampaign(Thing):
         return False
 
     def priority_name_from_priority(self, priority):
-        if not priority in PROMOTE_PRIORITIES.values():
+        if not priority in list(PROMOTE_PRIORITIES.values()):
             raise ValueError("%s is not a valid priority" % priority.name)
         return priority.name
 
@@ -696,7 +696,7 @@ class PromotionLog(tdb_cassandra.View):
             row = cls._byID(rowkey)
         except tdb_cassandra.NotFound:
             return []
-        tuples = sorted(row._values().items(), key=lambda t: t[0].time)
+        tuples = sorted(list(row._values().items()), key=lambda t: t[0].time)
         return [t[1] for t in tuples]
 
 
@@ -869,16 +869,16 @@ class PromotionPrices(tdb_cassandra.View):
             except tdb_cassandra.NotFoundException:
                 metros = {}
 
-            for name, cpm in collections.iteritems():
+            for name, cpm in collections.items():
                 r["COLLECTION"][name] = cpm
 
-            for name, cpm in subreddits.iteritems():
+            for name, cpm in subreddits.items():
                 r["SUBREDDIT"][name] = cpm
 
-            for name, cpm in countries.iteritems():
+            for name, cpm in countries.items():
                 r["COUNTRY"][name] = cpm
 
-            for name, cpm in metros.iteritems():
+            for name, cpm in metros.items():
                 r["METRO"][name] = cpm
 
         return r

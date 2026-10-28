@@ -148,7 +148,7 @@ def message_notification_email(data):
     # If our counter's expired, initialize it again.
     g.cache.add(MESSAGE_THROTTLE_KEY, 0, time=24*60*60)
 
-    for datum in data.itervalues():
+    for datum in data.values():
         datum = json.loads(datum)
         user = Account._byID36(datum['to'], data=True)
         comment = Comment._by_fullname(datum['comment'], data=True)
@@ -260,10 +260,10 @@ def send_queued_mail(test = False):
         try:
             mimetext = email.to_MIMEText()
             if mimetext is None:
-                print ("Got None mimetext for email from %r and to %r"
-                       % (email.fr_addr, email.to_addr))
+                print(("Got None mimetext for email from %r and to %r"
+                       % (email.fr_addr, email.to_addr)))
             if test:
-                print mimetext.as_string()
+                print(mimetext.as_string())
             else:
                 session.sendmail(email.fr_addr, email.to_addr,
                                  mimetext.as_string())
@@ -272,7 +272,7 @@ def send_queued_mail(test = False):
         except (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused,
                 UnicodeDecodeError, AttributeError, HeaderParseError):
             # handle error and print, but don't stall the rest of the queue
-            print "Handled error sending mail (traceback to follow)"
+            print("Handled error sending mail (traceback to follow)")
             traceback.print_exc(file = sys.stdout)
             email.set_sent(rejected = True)
 
@@ -300,8 +300,8 @@ def send_queued_mail(test = False):
                                       leave = False).render(style = "email")
             # handle unknown types here
             elif not email.body:
-                print ("Rejecting email with an empty body from %r and to %r"
-                       % (email.fr_addr, email.to_addr))
+                print(("Rejecting email with an empty body from %r and to %r"
+                       % (email.fr_addr, email.to_addr)))
                 email.set_sent(rejected = True)
                 continue
             sendmail(email)

@@ -111,7 +111,7 @@ def get_message_subject(message):
     else:
         conversation_subject = message.subject
 
-    return u"[r/{subreddit} mail]: {subject}".format(
+    return "[r/{subreddit} mail]: {subject}".format(
         subreddit=sr.name, subject=_force_unicode(conversation_subject))
 
 

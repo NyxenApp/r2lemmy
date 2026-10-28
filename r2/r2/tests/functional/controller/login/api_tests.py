@@ -20,7 +20,7 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 from r2.tests import RedditControllerTestCase
-from common import LoginRegBase
+from .common import LoginRegBase
 
 
 class LoginRegTests(LoginRegBase, RedditControllerTestCase):

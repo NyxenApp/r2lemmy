@@ -53,7 +53,7 @@ def cache_headers_valid(policy_name, headers):
 
     policy_headers = CACHE_POLICY_DIRECTIVES[policy_name]
 
-    for header_name, expected_vals in policy_headers.items():
+    for header_name, expected_vals in list(policy_headers.items()):
         # Cache-Control is a little special, you can have multiple directives
         # in multiple headers
         found_vals = set(headers.get(header_name, []))

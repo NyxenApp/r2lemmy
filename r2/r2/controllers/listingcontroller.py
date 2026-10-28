@@ -21,10 +21,10 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
-from oauth2 import require_oauth2_scope
-from reddit_base import RedditController, base_listing, paginated_listing
+from .oauth2 import require_oauth2_scope
+from .reddit_base import RedditController, base_listing, paginated_listing
 
 from r2.models import *
 from r2.models.query_cache import CachedQuery, MergedCachedQuery
@@ -57,7 +57,7 @@ from r2.lib.memoize import memoize
 from r2.lib.validator import *
 import socket
 
-from api_docs import api_doc, api_section
+from .api_docs import api_doc, api_section
 
 from pylons import app_globals as g
 from pylons.i18n import _
@@ -287,10 +287,10 @@ class SubredditListingController(ListingController):
         # This doesn't handle `max_length`s shorter than `sr_fragment`.
         # Unknown what the behavior should be, but realistically it shouldn't
         # happen, since this is scoped pretty small.
-        max_title_length = max_length - len(u" • %s" % sr_fragment)
+        max_title_length = max_length - len(" • %s" % sr_fragment)
         title = trunc_string(title, max_title_length)
 
-        return u"%s • %s" % (_force_unicode(title), sr_fragment)
+        return "%s • %s" % (_force_unicode(title), sr_fragment)
 
     def canonical_link(self):
         """Return the canonical link of the subreddit.
@@ -559,7 +559,7 @@ class HotController(ListingWithPromos):
                     ]
 
             if stack:
-                return PaneStack(filter(None, stack), css_class='spacer')
+                return PaneStack([_f for _f in stack if _f], css_class='spacer')
 
         return content
 
@@ -775,7 +775,7 @@ class UserController(ListingController):
             srnames = LinkSavesBySubreddit.get_saved_subreddits(self.vuser)
             srnames += CommentSavesBySubreddit.get_saved_subreddits(self.vuser)
             srs = Subreddit._by_name(set(srnames), stale=True)
-            srnames = [name for name, sr in srs.iteritems()
+            srnames = [name for name, sr in srs.items()
                             if sr.can_view(c.user)]
             srnames = sorted(set(srnames), key=lambda name: name.lower())
             if len(srnames) > 1:
@@ -785,7 +785,7 @@ class UserController(ListingController):
                     sr_buttons.append(QueryButton(srname, srname, query_param='sr'))
                 base_path = '/user/%s/saved' % self.vuser.name
                 if self.savedcategory:
-                    base_path += '/%s' % urllib.quote(self.savedcategory)
+                    base_path += '/%s' % urllib.parse.quote(self.savedcategory)
                 sr_menu = NavMenu(sr_buttons, base_path=base_path,
                                   title=_('filter by subreddit'),
                                   type='lightdrop')
@@ -797,7 +797,7 @@ class UserController(ListingController):
                 cat_buttons = [NavButton(_('all'), '/', css_class='primary')]
                 for cat in categories:
                     cat_buttons.append(NavButton(cat,
-                                                 urllib.quote(cat),
+                                                 urllib.parse.quote(cat),
                                                  use_params=True))
                 base_path = '/user/%s/saved/' % self.vuser.name
                 cat_menu = NavMenu(cat_buttons, base_path=base_path,

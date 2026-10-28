@@ -21,7 +21,7 @@
 ###############################################################################
 
 from datetime import datetime
-from urllib import urlencode
+from urllib.parse import urlencode
 import base64
 import simplejson
 
@@ -32,7 +32,7 @@ from pylons.i18n import _
 
 from r2.config.extensions import set_extension
 from r2.lib.base import abort
-from reddit_base import RedditController, MinimalController, require_https
+from .reddit_base import RedditController, MinimalController, require_https
 from r2.lib.db import tdb_cassandra
 from r2.lib.db.thing import NotFound
 from r2.lib.pages import RedditError

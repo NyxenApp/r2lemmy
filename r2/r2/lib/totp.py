@@ -67,7 +67,7 @@ def generate_secret():
 
 if __name__ == "__main__":
     # based on RFC-6238 Appendix B (trimmed to six-digit OTPs)
-    secret = base64.b32encode("12345678901234567890")
+    secret = base64.b32encode(b"12345678901234567890")
     assert make_totp(secret, timestamp=59) == "287082"
     assert make_totp(secret, timestamp=1111111109) == "081804"
     assert make_totp(secret, timestamp=1111111111) == "050471"

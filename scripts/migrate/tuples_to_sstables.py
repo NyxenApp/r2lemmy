@@ -20,7 +20,7 @@ def utf8(val):
     return bytes(val)
 
 def datetime(val):
-    milliseconds = long(float(val) * 1e3)
+    milliseconds = int(float(val) * 1e3)
     return ByteBuffer.allocate(8).putLong(0, milliseconds)
 
 COERCERS = dict(utf8=utf8,
@@ -94,8 +94,8 @@ def convert_to_sstables(input_files, column_family,
                                          timestamp, ttl, expirationTimestampMS)
 
             if verbose and fileinput.lineno() % 10000 == 0:
-                print "%d items processed (%s)" % (fileinput.lineno(),
-                                                   fileinput.filename())
+                print("%d items processed (%s)" % (fileinput.lineno(),
+                                                   fileinput.filename()))
     except:
         # it's common that whatever causes us to fail also cases the finally
         # clause below to fail, which masks the original exception

@@ -221,7 +221,7 @@ class EmailHandler(object):
             uid = user._id if user else 0
             tid = thing._fullname if thing else ""
             key = hashlib.sha1(str((email, from_name, uid, tid, ip, kind, body,
-                               datetime.datetime.now(g.tz)))).hexdigest()
+                               datetime.datetime.now(g.tz))).encode('utf-8')).hexdigest()
             s.insert().values({s.c.to_addr : email,
                                s.c.account_id : uid,
                                s.c.from_name : from_name,
@@ -412,7 +412,7 @@ class Email(object):
                                    t.c.msg_hash :  self.msg_hash,
                                    }).execute()
             except:
-                print "failed to send message"
+                print("failed to send message")
 
             self.sent = True
 
@@ -421,7 +421,7 @@ class Email(object):
             if reject_newlines and '\n' in s:
                 raise HeaderParseError(
                     'header value contains unexpected newline: {!r}'.format(s))
-            return s.encode('utf8') if isinstance(s, unicode) else s
+            return s.encode('utf8') if isinstance(s, str) else s
 
         fr = '"%s" <%s>' % (
             self.from_name().replace('"', ''),

@@ -24,7 +24,7 @@ from datetime import datetime
 from pylons import tmpl_context as c
 from pylons import app_globals as g
 import collections
-import httplib
+import http.client
 import time
 import re
 
@@ -40,25 +40,25 @@ class SearchError(Exception):
     pass
 
 
-class SearchHTTPError(httplib.HTTPException):
+class SearchHTTPError(http.client.HTTPException):
     pass
 
 
 def safe_xml_str(s, use_encoding="utf-8"):
-    '''Replace invalid-in-XML unicode control characters with '\uFFFD'.
+    '''Replace invalid-in-XML unicode control characters with '\\uFFFD'.
     Also, coerces result to unicode
     
     '''
-    illegal_xml = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
+    illegal_xml = re.compile('[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
-    if not isinstance(s, unicode):
+    if not isinstance(s, str):
         if isinstance(s, str):
-            s = unicode(s, use_encoding, errors="replace")
+            s = str(s, use_encoding, errors="replace")
         else:
             # ints will raise TypeError if the "errors" kwarg
             # is passed, but since it's not a str no problem
-            s = unicode(s)
-    s = illegal_xml.sub(u"\uFFFD", s)
+            s = str(s)
+    s = illegal_xml.sub("\uFFFD", s)
     return s
 
 
@@ -74,7 +74,7 @@ def safe_get(get_fn, ids, return_dict=True, **kw):
     if return_dict:
         return items
     else:
-        return items.values()
+        return list(items.values())
 
 
 
@@ -101,7 +101,7 @@ def field(name=None, cloudsearch_type=str, lucene_type=SAME_AS_CLOUDSEARCH):
         function = None
 
     def field_inner(fn):
-        fn.field = Field(name or fn.func_name, cloudsearch_type,
+        fn.field = Field(name or fn.__name__, cloudsearch_type,
                          lucene_type, fn)
         return fn
 
@@ -115,15 +115,13 @@ class FieldsMeta(type):
     def __init__(cls, name, bases, attrs):
         type.__init__(cls, name, bases, attrs)
         fields = []
-        for attr in attrs.itervalues():
+        for attr in attrs.values():
             if hasattr(attr, "field"):
                 fields.append(attr.field)
         cls._fields = tuple(fields)
 
 
-class FieldsBase(object):
-    __metaclass__ = FieldsMeta
-
+class FieldsBase(object, metaclass=FieldsMeta):
     def fields(self):
         data = {}
         for field in self._fields:

@@ -162,16 +162,16 @@ from collections import defaultdict, namedtuple
 import csv
 import hmac
 import hashlib
-import cStringIO
+import io
 import sys, random, datetime, calendar, simplejson, re, time
 import time
 from itertools import chain, product
-from urllib import quote, urlencode
-from urlparse import urlparse
+from urllib.parse import quote, urlencode
+from urllib.parse import urlparse
 
 from r2.lib.ip_events import ips_by_account_id
 
-from things import wrap_links, wrap_things, default_thing_wrapper
+from .things import wrap_links, wrap_things, default_thing_wrapper
 
 datefmt = _force_utf8(_('%d %b %Y'))
 
@@ -190,7 +190,7 @@ def responsive(res, space_compress=None):
         space_compress = not g.template_debug
 
     if is_api():
-        res = res or u''
+        res = res or ''
         if not c.allowed_callback and request.environ.get("WANT_RAW_JSON"):
             res = scriptsafe_dumps(res)
         else:
@@ -986,7 +986,7 @@ class Reddit(Templated):
     @staticmethod
     def content_stack(panes, css_class = None):
         """Helper method for reordering the content stack."""
-        return PaneStack(filter(None, panes), css_class = css_class)
+        return PaneStack([_f for _f in panes if _f], css_class = css_class)
 
     def content(self):
         """returns a Wrapped (or renderable) item for the main content div."""
@@ -1352,7 +1352,7 @@ class PrefDeactivate(Templated):
 class MessagePage(Reddit):
     """Defines the content for /message/*"""
     def __init__(self, *a, **kw):
-        if not kw.has_key('show_sidebar'):
+        if 'show_sidebar' not in kw:
             kw['show_sidebar'] = False
 
         source = kw.pop("source", None)
@@ -1764,13 +1764,13 @@ class LinkInfoPage(Reddit):
         sr_fragment = "/r/" + c.site.name if not c.default_sr else get_domain()
         data = {
             "site_name": "reddit",
-            "title": u"%s • %s" % (link_title, sr_fragment),
+            "title": "%s • %s" % (link_title, sr_fragment),
             "description": self._build_og_description(meta_description),
             "ttl": "600",  # re-fetch frequently to update vote/comment count
         }
         if not self.link.nsfw:
             image_data = self._build_og_image()
-            for key, value in image_data.iteritems():
+            for key, value in image_data.items():
                 # Although the spec[0] and their docs[1] say 'og:image' and
                 # 'og:image:url' are equivalent, Facebook doesn't actually take
                 # the thumbnail from the latter form.  Even if that gets fixed,
@@ -1849,7 +1849,7 @@ class LinkInfoPage(Reddit):
         # at the end, we'd like to always show the whole subreddit name, so
         # let's truncate the title while still ensuring the entire thing is
         # under the limit.
-        sr_fragment = u" • /r/" + c.site.name if not c.default_sr else get_domain()
+        sr_fragment = " • /r/" + c.site.name if not c.default_sr else get_domain()
         max_link_title_length = 70 - len(sr_fragment)
 
         return {
@@ -1885,7 +1885,7 @@ class LinkInfoPage(Reddit):
             toolbar.insert(0, PageNameNav('subreddit'))
 
         if c.user_is_admin:
-            from admin_pages import AdminLinkMenu
+            from .admin_pages import AdminLinkMenu
             toolbar.append(AdminLinkMenu(self.link))
 
         return toolbar
@@ -1943,7 +1943,7 @@ class LinkInfoPage(Reddit):
 
         if not (self.link.promoted and not c.user_is_sponsor):
             if c.user_is_admin:
-                from admin_pages import AdminLinkInfoBar
+                from .admin_pages import AdminLinkInfoBar
                 rb.insert(1, AdminLinkInfoBar(a=self.link))
             else:
                 rb.insert(1, LinkInfoBar(a=self.link))
@@ -2341,7 +2341,7 @@ class ProfilePage(Reddit):
                    NavMenu(main_buttons, base_path = path, type="tabmenu")]
 
         if c.user_is_admin:
-            from admin_pages import AdminProfileMenu
+            from .admin_pages import AdminProfileMenu
             toolbar.append(AdminProfileMenu(path))
 
         return toolbar
@@ -2393,12 +2393,12 @@ class ProfilePage(Reddit):
 
         if c.user_is_admin:
             from r2.lib.pages.admin_pages import AdminNotesSidebar
-            from admin_pages import AdminSidebar
+            from .admin_pages import AdminSidebar
 
             rb.push(AdminSidebar(self.user))
             rb.push(AdminNotesSidebar('user', self.user.name))
         elif c.user_is_sponsor:
-            from admin_pages import SponsorSidebar
+            from .admin_pages import SponsorSidebar
             rb.push(SponsorSidebar(self.user))
 
         mod_sr_ids = Subreddit.reverse_moderator_ids(self.user)
@@ -3028,7 +3028,7 @@ class SubredditStylesheetBase(Templated):
     def __init__(self, stylesheet_contents, **kwargs):
         raw_images = ImagesByWikiPage.get_images(c.site, "config/stylesheet")
         images = {name: make_url_protocol_relative(url)
-                  for name, url in raw_images.iteritems()}
+                  for name, url in raw_images.items()}
         super(SubredditStylesheetBase, self).__init__(
             images=images,
             stylesheet_contents=stylesheet_contents,
@@ -3120,7 +3120,7 @@ class CssError(Templated):
 class UploadedImage(Templated):
     "The page rendered in the iframe during an upload of a header image"
     def __init__(self,status,img_src, name="", errors = {}, form_id = ""):
-        self.errors = list(errors.iteritems())
+        self.errors = list(errors.items())
         Templated.__init__(self, status=status, img_src=img_src, name = name,
                            form_id = form_id)
 
@@ -4319,7 +4319,7 @@ class DetailsPage(LinkInfoPage):
     extension_handling= False
 
     def __init__(self, thing, *args, **kwargs):
-        from admin_pages import Details
+        from .admin_pages import Details
         after = kwargs.pop('after', None)
         reverse = kwargs.pop('reverse', False)
         count = kwargs.pop('count', None)
@@ -4350,7 +4350,7 @@ class DetailsPage(LinkInfoPage):
         rb = LinkInfoPage.rightbox(self)
 
         if c.user_is_admin:
-            from admin_pages import AdminDetailsBar
+            from .admin_pages import AdminDetailsBar
             rb.append(AdminDetailsBar(from_page='details'))
 
         return rb
@@ -4420,17 +4420,17 @@ class PromoteLinkBase(Templated):
                 return name
 
         countries = [(code, country['name'], False) for code, country
-                                                    in g.locations.iteritems()]
+                                                    in g.locations.items()]
         countries.append(('', _('none'), True))
 
         countries = sorted(countries, key=location_sort)
         regions = {}
         metros = {}
-        for code, country in g.locations.iteritems():
+        for code, country in g.locations.items():
             if 'regions' in country and country['regions']:
                 regions[code] = [('', _('all'), True)]
 
-                for region_code, region in country['regions'].iteritems():
+                for region_code, region in country['regions'].items():
                     if region['metros']:
                         region_tuple = (region_code, region['name'], False)
                         regions[code].append(region_tuple)
@@ -4439,7 +4439,7 @@ class PromoteLinkBase(Templated):
                         else:
                             metros[region_code] = [('', _('all'), True)]
 
-                        for metro_code, metro in region['metros'].iteritems():
+                        for metro_code, metro in region['metros'].items():
                             metro_tuple = (metro_code, metro['name'], False)
                             metros[region_code].append(metro_tuple)
                         metros[region_code].sort(key=location_sort)
@@ -4542,7 +4542,7 @@ class PromoteLinkEdit(PromoteLinkBase):
         self.priorities = [
             (p.name, p.text, p.description, p.default,
             p.inventory_override, p == PROMOTE_PRIORITIES['auction'])
-            for p in PROMOTE_PRIORITIES.values()
+            for p in list(PROMOTE_PRIORITIES.values())
         ]
 
         self.get_locations()
@@ -4776,7 +4776,7 @@ def make_link_child(item, show_media_preview=False):
         expand = False
         position_inline = False
 
-        if isinstance(media_object, basestring):
+        if isinstance(media_object, str):
             media_embed = media_object
         else:
             is_autoexpand_type = media_object.get('type') in g.autoexpand_media_types
@@ -4815,7 +4815,7 @@ def make_link_child(item, show_media_preview=False):
 
     # if the item is_self, add a selftext child
     elif item.is_self:
-        if not item.selftext: item.selftext = u''
+        if not item.selftext: item.selftext = ''
 
         expand = expandable
         position_inline = expandable
@@ -4862,7 +4862,7 @@ class MediaChild(LinkChild):
         LinkChild.__init__(self, link, **kw)
 
     def content(self):
-        if isinstance(self._content, basestring):
+        if isinstance(self._content, str):
             return self._content
         return self._content.render()
 
@@ -4975,7 +4975,7 @@ class MediaEmbedBody(CachedTemplate):
 
 
 class PaymentForm(Templated):
-    countries = sorted({c['name'] for c in g.locations.values()})
+    countries = sorted({c['name'] for c in list(g.locations.values())})
 
     default_country = g.locations.get("US").get("name")
 
@@ -5044,7 +5044,7 @@ class PromoteInventory(PromoteLinkBase):
         self.setup()
 
     def as_csv(self):
-        out = cStringIO.StringIO()
+        out = io.StringIO()
         writer = csv.writer(out)
 
         writer.writerow(tuple(self.header))
@@ -5064,12 +5064,12 @@ class PromoteInventory(PromoteLinkBase):
         campaigns_by_date = inventory.get_campaigns_by_date(
             srs, self.start, self.end)
         link_ids = {camp.link_id for camp
-                    in chain.from_iterable(campaigns_by_date.itervalues())}
+                    in chain.from_iterable(iter(campaigns_by_date.values()))}
         links_by_id = Link._byID(link_ids, data=True)
         dates = inventory.get_date_range(self.start, self.end)
         total_by_date = {date: Bookings() for date in dates}
         imps_by_link = defaultdict(lambda: {date: Bookings() for date in dates})
-        for date, campaigns in campaigns_by_date.iteritems():
+        for date, campaigns in campaigns_by_date.items():
             for camp in campaigns:
                 link = links_by_id[camp.link_id]
                 daily_impressions = camp.impressions / camp.ndays
@@ -5080,12 +5080,12 @@ class PromoteInventory(PromoteLinkBase):
                     total_by_date[date].subreddit += daily_impressions
                     imps_by_link[link._id][date].subreddit += daily_impressions
 
-        account_ids = {link.author_id for link in links_by_id.itervalues()}
+        account_ids = {link.author_id for link in links_by_id.values()}
         accounts_by_id = Account._byID(account_ids, data=True)
 
         self.header = ['link'] + [date.strftime("%m/%d/%Y") for date in dates] + ['total']
         rows = []
-        for link_id, imps_by_date in imps_by_link.iteritems():
+        for link_id, imps_by_date in imps_by_link.items():
             link = links_by_id[link_id]
             author = accounts_by_id[link.author_id]
             info = {
@@ -5108,7 +5108,7 @@ class PromoteInventory(PromoteLinkBase):
 
         predicted_pageviews_by_sr = inventory.get_predicted_pageviews(srs)
         predicted_pageviews = sum(pageviews for pageviews
-                                  in predicted_pageviews_by_sr.itervalues())
+                                  in predicted_pageviews_by_sr.values())
         predicted_row = Storage(
             info={'title': 'predicted'},
             is_total=True,
@@ -5168,7 +5168,7 @@ class PromoteReport(PromoteLinkBase):
                            bad_links=bad_links)
 
     def as_csv(self):
-        out = cStringIO.StringIO()
+        out = io.StringIO()
         writer = csv.writer(out)
 
         writer.writerow((_("start date"), self.start.strftime('%m/%d/%Y')))
@@ -5218,11 +5218,11 @@ class PromoteReport(PromoteLinkBase):
     @classmethod
     def get_traffic(self, campaigns, start, end):
         campaigns_by_name = {camp._fullname: camp for camp in campaigns}
-        codenames = campaigns_by_name.keys()
+        codenames = list(campaigns_by_name.keys())
 
         start_date = start.date()
         ndays = (end - start).days
-        dates = {start_date + datetime.timedelta(days=i) for i in xrange(ndays)}
+        dates = {start_date + datetime.timedelta(days=i) for i in range(ndays)}
 
         # traffic database uses datetimes with no timezone, also need to shift
         # start, end to account for campaigns launching at 12:00 EST
@@ -5268,7 +5268,7 @@ class PromoteReport(PromoteLinkBase):
             bid = camp.total_budget_pennies / max(camp.ndays, 1)
             camp_ndays = max(1, (camp.end_date - camp.start_date).days)
             camp_start = camp.start_date.date()
-            days = xrange(camp_ndays)
+            days = range(camp_ndays)
             camp_dates = {camp_start + datetime.timedelta(days=i) for i in days}
 
             for date in camp_dates.intersection(dates):
@@ -5283,7 +5283,7 @@ class PromoteReport(PromoteLinkBase):
 
     def make_report(self):
         campaigns = PromoCampaign._by_link([link._id for link in self.links])
-        campaigns = filter(promote.charged_or_not_needed, campaigns)
+        campaigns = list(filter(promote.charged_or_not_needed, campaigns))
         traffic_by_key = self.get_traffic(campaigns, self.start, self.end)
 
         def group_and_combine(items_by_key, group_on=None):
@@ -5291,14 +5291,14 @@ class PromoteReport(PromoteLinkBase):
             # attributes in group_on, and create new keys with None values for
             # the attributes we aren't grouping on.
             by_group = defaultdict(list)
-            for item_key, item in items_by_key.iteritems():
+            for item_key, item in items_by_key.items():
                 attrs = [getattr(item_key, a) if a in group_on else None
                     for a in ReportKey._fields]
                 group_key = ReportKey(*attrs)
                 by_group[group_key].append(item)
 
             new_items_by_key = {}
-            for group_key, items in by_group.iteritems():
+            for group_key, items in by_group.items():
                 bid = fp_imps = sr_imps = fp_clicks = sr_clicks = 0
                 for item in items:
                     bid += item.bid
@@ -5530,7 +5530,7 @@ class ModeratorPermissions(Templated):
                            editable=editable, embedded=embedded)
 
     def items(self):
-        return self.permissions.iteritems()
+        return iter(self.permissions.items())
 
 class ListingChooser(Templated):
     def __init__(self):
@@ -5602,7 +5602,7 @@ class ListingChooser(Templated):
     def find_selected(self):
         path = request.path
         matching = []
-        for item in chain(*self.sections.values()):
+        for item in chain(*list(self.sections.values())):
             if item["site"]:
                 if item["site"] == c.site:
                     matching.append(item)
@@ -5777,7 +5777,7 @@ class ExploreItemListing(Templated):
         self.things = []
         self.settings = settings
         if recs:
-            links, srs = zip(*[(rec.link, rec.sr) for rec in recs])
+            links, srs = list(zip(*[(rec.link, rec.sr) for rec in recs]))
             wrapped_links = {l._id: l for l in wrap_links(links).things}
             wrapped_srs = {sr._id: sr for sr in wrap_things(*srs)}
             for rec in recs:

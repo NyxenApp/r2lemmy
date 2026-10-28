@@ -22,11 +22,11 @@
 
 import hmac
 import hashlib
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from r2.config import feature
 from r2.models import *
-from filters import (
+from .filters import (
     _force_unicode,
     _force_utf8,
     conditional_websafe,
@@ -47,7 +47,7 @@ import simplejson
 import os.path
 from copy import copy
 import random
-import urlparse
+import urllib.parse
 import calendar
 import math
 import time
@@ -111,7 +111,7 @@ def static(path, absolute=False, mangle_name=True):
         file_id = static_mtime(actual_path) or random.randint(0, 1000000)
         query = 'v=' + str(file_id)
 
-    return urlparse.urlunsplit((
+    return urllib.parse.urlunsplit((
         scheme,
         domain,
         actual_path,
@@ -124,16 +124,16 @@ def make_url_protocol_relative(url):
     if not url or url.startswith("//"):
         return url
 
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
-    return urlparse.urlunsplit((None, netloc, path, query, fragment))
+    scheme, netloc, path, query, fragment = urllib.parse.urlsplit(url)
+    return urllib.parse.urlunsplit((None, netloc, path, query, fragment))
 
 
 def make_url_https(url):
     if not url or url.startswith("https://"):
         return url
 
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
-    return urlparse.urlunsplit(("https", netloc, path, query, fragment))
+    scheme, netloc, path, query, fragment = urllib.parse.urlsplit(url)
+    return urllib.parse.urlunsplit(("https", netloc, path, query, fragment))
 
 
 def header_url(url, absolute=False):
@@ -384,7 +384,7 @@ def replace_render(listing, item, render_func):
         if hasattr(item, "num_comments"):
             com_label, com_cls = comment_label(item.num_comments)
             if style == "compact":
-                com_label = unicode(item.num_comments)
+                com_label = str(item.num_comments)
             replacements['numcomments'] = com_label
             replacements['commentcls'] = com_cls
 
@@ -419,11 +419,11 @@ def replace_render(listing, item, render_func):
         renderer = render_func or item.render
         res = renderer(style = style, **replacements)
 
-        if isinstance(res, (str, unicode)):
+        if isinstance(res, str):
             rv = unsafe(res)
             if g.debug:
                 for leftover in re.findall('<\$>(.+?)(?:<|$)', rv):
-                    print "replace_render didn't replace %s" % leftover
+                    print("replace_render didn't replace %s" % leftover)
 
             return rv
 
@@ -637,7 +637,7 @@ def add_moderator_distinguish(distinguish_attribs_list, subreddit):
 
 def add_friend_distinguish(distinguish_attribs_list, note=None):
     if note:
-        label = u"%s (%s)" % (_("friend"), _force_unicode(note))
+        label = "%s (%s)" % (_("friend"), _force_unicode(note))
     else:
         label = None
     add_attr(distinguish_attribs_list, 'F', label)
@@ -664,7 +664,7 @@ def add_submitter_distinguish(distinguish_attribs_list, link, subreddit):
 
 
 def search_url(query, subreddit, restrict_sr="off", sort=None, recent=None, ref=None):
-    import urllib
+    import urllib.request, urllib.parse, urllib.error
     query = _force_utf8(query)
     url_query = {"q": query}
     if ref:
@@ -676,7 +676,7 @@ def search_url(query, subreddit, restrict_sr="off", sort=None, recent=None, ref=
     if recent:
         url_query["t"] = recent
     path = "/r/%s/search?" % subreddit if subreddit else "/search?"
-    path += urllib.urlencode(url_query)
+    path += urllib.parse.urlencode(url_query)
     return path
 
 
@@ -741,7 +741,7 @@ def format_html(format_string, *args, **kwargs):
     if args and kwargs:
         raise ValueError("Can't specify both positional and keyword args")
     args_safe = tuple(map(conditional_websafe, args))
-    kwargs_gen = ((k, conditional_websafe(v)) for (k, v) in kwargs.iteritems())
+    kwargs_gen = ((k, conditional_websafe(v)) for (k, v) in kwargs.items())
     kwargs_safe = dict(kwargs_gen)
 
     format_args = args_safe or kwargs_safe

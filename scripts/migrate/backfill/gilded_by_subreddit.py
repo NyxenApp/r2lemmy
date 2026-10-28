@@ -31,7 +31,7 @@ gilding_price = g.gold_month_price.pennies
 
 for q in queries:
     for things in fetch_things2(q, chunks=True, chunk_size=100):
-        print things[0]._fullname
+        print(things[0]._fullname)
 
         for thing in things:
             seconds_per_gilding = calculate_server_seconds(gilding_price, thing._date)
@@ -39,5 +39,5 @@ for q in queries:
 
 for sr_id, seconds in seconds_by_srid:
     sr = Subreddit._byID(sr_id, data=True)
-    print "%s: %s seconds" % (sr.name, seconds)
+    print("%s: %s seconds" % (sr.name, seconds))
     sr._incr("gilding_server_seconds", seconds)

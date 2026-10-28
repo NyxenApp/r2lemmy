@@ -20,7 +20,7 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from datetime import datetime, timedelta
 from r2.lib.db import tdb_cassandra
 from r2.lib.db.thing import NotFound
@@ -34,7 +34,7 @@ from r2.lib.db.tdb_cassandra import NotFound
 from r2.models.printable import Printable
 from r2.models.account import Account
 from collections import OrderedDict
-from StringIO import StringIO
+from io import StringIO
 
 import pycassa.types
 
@@ -131,7 +131,7 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
     @classmethod
     def get_authors(cls, revisions):
         authors = [r._get('author') for r in revisions]
-        authors = filter(None, authors)
+        authors = [_f for _f in authors if _f]
         return Account._byID36(authors, data=True)
     
     @classmethod
@@ -139,7 +139,7 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
         from r2.lib.pages import WrappedUser
         authors = cls.get_authors(revisions)
         return dict([(id36, WrappedUser(v))
-                     for id36, v in authors.iteritems() if v])
+                     for id36, v in authors.items() if v])
     
     @classmethod
     def add_props(cls, user, wrapped):
@@ -325,7 +325,7 @@ class WikiPage(tdb_cassandra.Thing):
             num = len(wikipages)
             pages += wikipages
             after = wikipages[-1] if num else None
-        return filter(filter_check, pages)
+        return list(filter(filter_check, pages))
     
     @classmethod
     def get_listing(cls, sr, filter_check=None):
@@ -370,7 +370,7 @@ class WikiPage(tdb_cassandra.Thing):
     
     def get_editors(self, properties=None):
         try:
-            return WikiPageEditors._byID(self._id, properties=properties)._values().keys() or []
+            return list(WikiPageEditors._byID(self._id, properties=properties)._values().keys()) or []
         except tdb_cassandra.NotFoundException:
             return []
     
@@ -415,7 +415,7 @@ class WikiPage(tdb_cassandra.Thing):
         NUM_PERMLEVELS = 3
         if permlevel == self.permlevel:
             return
-        if not force and int(permlevel) not in range(NUM_PERMLEVELS):
+        if not force and int(permlevel) not in list(range(NUM_PERMLEVELS)):
             raise ValueError('Permlevel not valid')
         self.permlevel = permlevel
         self._commit()
@@ -508,7 +508,7 @@ class WikiPageIniItem(object):
         try:
             wp = WikiPage.get(*cls._get_wiki_config())
         except NotFound:
-            return items if return_dict else items.values()
+            return items if return_dict else list(items.values())
         wp_content = StringIO(wp.content)
         cfg = SafeConfigParser(allow_no_value=True)
         cfg.readfp(wp_content)
@@ -531,4 +531,4 @@ class WikiPageIniItem(object):
             if item.is_enabled:
                 items[section] = item
         
-        return items if return_dict else items.values()
+        return items if return_dict else list(items.values())

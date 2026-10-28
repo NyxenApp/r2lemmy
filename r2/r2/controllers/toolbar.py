@@ -25,7 +25,7 @@ import string
 from pylons import tmpl_context as c
 from pylons import app_globals as g
 
-from reddit_base import RedditController
+from .reddit_base import RedditController
 from r2.lib import utils
 from r2.lib.pages import *
 from r2.lib.pages.things import hot_links_by_url_listing

@@ -71,12 +71,12 @@ class SanitizeStackLocalsProcessor(Processor):
     def filter_stacktrace(self, data, **kwargs):
         def remove_keys(obj):
             if isinstance(obj, dict):
-                for k in obj.keys():
+                for k in list(obj.keys()):
                     if k in self.keys_to_remove:
                         obj.pop(k)
                     elif isinstance(obj[k], self.classes_to_remove):
                         obj.pop(k)
-                    elif isinstance(obj[k], basestring):
+                    elif isinstance(obj[k], str):
                         contains_forbidden_repr = any(
                             _cls.__name__ in obj[k]
                             for _cls in self.classes_to_remove
@@ -100,7 +100,7 @@ class RavenErrorReporter(Reporter):
     def get_module_versions(cls):
         return {
             repo: commit_hash[:6]
-            for repo, commit_hash in g.versions.iteritems()
+            for repo, commit_hash in g.versions.items()
         }
 
     @classmethod
@@ -122,7 +122,7 @@ class RavenErrorReporter(Reporter):
             "referer",
         )
         headers = {
-            k: v for k, v in request.headers.iteritems()
+            k: v for k, v in request.headers.items()
             if k.lower() in HEADER_WHITELIST
         }
 
@@ -173,7 +173,7 @@ class RavenErrorReporter(Reporter):
            "%s:%s" % (repo, commit_hash)
            for repo, commit_hash in sorted(g.versions.items())
         )
-        release_hash = md5(release_str).hexdigest()
+        release_hash = md5(release_str.encode('utf-8')).hexdigest()
 
         RAVEN_CLIENT = raven.Client(
             dsn=g.sentry_dsn,

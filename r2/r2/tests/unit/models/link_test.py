@@ -98,7 +98,7 @@ class TestCommentQaSort(unittest.TestCase):
         tiny_score = tiny._qa((), ())
         short_score = short._qa((), ())
         medium_score = medium._qa((), ())
-        long_score = long._qa((), ())
+        long_score = int._qa((), ())
 
         self.assertLess(tiny_score, short_score)
         self.assertLess(short_score, medium_score)
@@ -154,7 +154,7 @@ class LinkMock(Link):
     _nodb = True
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             setattr(self, key, value)
 
     def __setattr__(self, attr, val):
@@ -248,7 +248,7 @@ class TestSubmit(unittest.TestCase):
             author=AccountMock()
         )
 
-        self.assertEqual(l.url, u"/r/linktests/comments/%s/test_post/" % l._id36)
+        self.assertEqual(l.url, "/r/linktests/comments/%s/test_post/" % l._id36)
 
     def test_new_self_post_doesnt_modify_links_by_url(self):
         l = LinkMock._submit(

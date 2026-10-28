@@ -122,8 +122,8 @@ class FeatureState(object):
         """
         # Mix the feature name in with the seed so the same users don't get
         # selected for ramp-ups for every feature.
-        hashed = hashlib.sha1(self.name + seed)
-        bucket = long(hashed.hexdigest(), 16) % self.NUM_BUCKETS
+        hashed = hashlib.sha1((self.name + seed).encode('utf-8'))
+        bucket = int(hashed.hexdigest(), 16) % self.NUM_BUCKETS
         return bucket
 
     @classmethod

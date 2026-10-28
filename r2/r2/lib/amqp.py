@@ -33,7 +33,7 @@ consume_items: For processing a queue one item at a time
   while trying to get a connection to amqp.
 
 """
-from Queue import Queue
+from queue import Queue
 from threading import local, Thread
 from datetime import datetime
 import os
@@ -42,7 +42,7 @@ import time
 import errno
 import socket
 import itertools
-import cPickle as pickle
+import pickle as pickle
 
 from amqplib import client_0_8 as amqp
 
@@ -91,7 +91,7 @@ class Worker:
                 self.q.task_done()
             except:
                 import traceback
-                print traceback.format_exc()
+                print(traceback.format_exc())
 
     def do(self, fn, *a, **kw):
         fn1 = lambda: fn(*a, **kw)
@@ -121,9 +121,9 @@ class ConnectionManager(local):
                     virtual_host=cfg.amqp_virtual_host,
                     insist=False,
                 )
-            except (socket.error, IOError), e:
-                print ('error connecting to amqp %s @ %s (%r)' %
-                       (cfg.amqp_user, cfg.amqp_host, e))
+            except (socket.error, IOError) as e:
+                print(('error connecting to amqp %s @ %s (%r)' %
+                       (cfg.amqp_user, cfg.amqp_host, e)))
                 time.sleep(1)
 
         # don't run init_queue until someone actually needs it. this
@@ -262,7 +262,7 @@ def consume_items(queue, callback, verbose=True):
                 # available
                 count_str = '(%d remaining)' % msg.delivery_info['message_count']
 
-            print "%s: 1 item %s" % (queue, count_str)
+            print("%s: 1 item %s" % (queue, count_str))
 
         cfg.reset_caches()
         c.use_write_db = {}
@@ -338,7 +338,7 @@ def handle_items(queue, callback, ack=True, limit=1, min_size=0,
                 # available
                 count_str = '(%d remaining)' % items[-1].delivery_info['message_count']
             if verbose:
-                print "%s: %d items %s" % (queue, len(items), count_str)
+                print("%s: %d items %s" % (queue, len(items), count_str))
             callback(items, chan)
 
             if ack:
@@ -363,7 +363,7 @@ def empty_queue(queue):
 def black_hole(queue):
     """continually empty out a queue as new items are created"""
     def _ignore(msg):
-        print 'Ignoring msg: %r' % msg.body
+        print('Ignoring msg: %r' % msg.body)
 
     consume_items(queue, _ignore)
 
@@ -393,19 +393,19 @@ def dedup_queue(queue, rk = None, limit=None,
             limit = msg.delivery_info.get('message_count')
             if limit is None:
                 default_max = 100*1000
-                print ("Message count was unavailable, defaulting to %d"
-                       % (default_max,))
+                print(("Message count was unavailable, defaulting to %d"
+                       % (default_max,)))
                 limit = default_max
             else:
-                print "Grabbing %d messages" % (limit,)
+                print("Grabbing %d messages" % (limit,))
         else:
             limit -= 1
             if limit <= 0:
                 break
             elif limit % 1000 == 0:
-                print limit
+                print(limit)
 
-    print "Grabbed %d unique bodies" % (len(bodies),)
+    print("Grabbed %d unique bodies" % (len(bodies),))
 
     if bodies:
         for body in bodies:

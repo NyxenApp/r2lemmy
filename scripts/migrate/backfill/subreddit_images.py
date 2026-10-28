@@ -21,7 +21,7 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-import urllib2
+import urllib.request as urllib2
 
 from pylons import app_globals as g
 
@@ -40,17 +40,17 @@ for sr in fetch_things2(all_subreddits):
     if not images:
         continue
 
-    print 'Processing /r/%s (id36: %s)' % (sr.name, sr._id36)
+    print('Processing /r/%s (id36: %s)' % (sr.name, sr._id36))
 
     # upgrade old-style image ids to urls
-    for name, image_url in images.items():
+    for name, image_url in list(images.items()):
         if not isinstance(image_url, int):
             continue
 
-        print "  upgrading image %r" % image_url
+        print("  upgrading image %r" % image_url)
         url = "http://%s/%s_%d.png" % (g.s3_old_thumb_bucket,
                                        sr._fullname, image_url)
-        image_data = urllib2.urlopen(url).read()
+        image_data = urllib.request.urlopen(url).read()
         new_url = upload_media(image_data, file_type=".png")
         images[name] = new_url
 

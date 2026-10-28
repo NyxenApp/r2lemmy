@@ -27,7 +27,7 @@ from mock import patch, MagicMock
 from r2.lib import signing
 from r2.tests import RedditControllerTestCase
 from r2.lib.validator import VThrottledLogin, VUname
-from common import LoginRegBase
+from .common import LoginRegBase
 
 
 class APIV1LoginTests(LoginRegBase, RedditControllerTestCase):

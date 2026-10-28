@@ -116,7 +116,7 @@ class Builder(object):
 
         authors = Account._byID(aids, data=True, stale=self.stale)
         now = datetime.datetime.now(g.tz)
-        cakes = {a._id for a in authors.itervalues()
+        cakes = {a._id for a in authors.values()
                        if a.cake_expiration and a.cake_expiration >= now}
         friend_rels = user.friend_rels() if user and user.gold else {}
 
@@ -124,7 +124,7 @@ class Builder(object):
         can_ban_set = set()
 
         if user:
-            for sr_id, sr in subreddits.iteritems():
+            for sr_id, sr in subreddits.items():
                 if sr.can_ban(user):
                     can_ban_set.add(sr_id)
 
@@ -316,7 +316,7 @@ class Builder(object):
         # recache the user object: it may be None if user is not logged in,
         # whereas now we are happy to have the UnloggedUser object
         user = c.user
-        for cls in types.keys():
+        for cls in list(types.keys()):
             cls.add_props(user, types[cls])
 
         return wrapped
@@ -499,10 +499,10 @@ class QueryBuilder(Builder):
                 if isinstance(item.lookups[0], Link):
                     items_by_subreddit[item.subreddit].append(item)
 
-            srs = items_by_subreddit.keys()
+            srs = list(items_by_subreddit.keys())
             sr_dicts = get_trimmed_sr_dicts(srs, c.user)
 
-            for sr, sr_items in items_by_subreddit.iteritems():
+            for sr, sr_items in items_by_subreddit.items():
                 sr_detail = sr_dicts[sr._id]
                 for item in sr_items:
                     item.sr_detail = sr_detail
@@ -675,7 +675,7 @@ class ModActionBuilder(QueryBuilder):
             w.fullname = item._fullname
             by_render_class[w.render_class].append(w)
 
-        for render_class, _items in by_render_class.iteritems():
+        for render_class, _items in by_render_class.items():
             render_class.add_props(c.user, _items)
 
         return wrapped
@@ -791,7 +791,7 @@ class WikiRevisionBuilder(QueryBuilder):
             wrapped.append(w)
 
         user = c.user
-        for cls in types.keys():
+        for cls in list(types.keys()):
             cls.add_props(user, types[cls])
 
         return wrapped
@@ -1095,7 +1095,7 @@ class CommentOrderer(CommentOrdererBase):
                 return self.read_cache()
         else:
             if bucket == "100_plus":
-                for sort_name, operator in SORT_OPERATOR_BY_NAME.iteritems():
+                for sort_name, operator in SORT_OPERATOR_BY_NAME.items():
                     if operator == self.sort:
                         break
                 else:
@@ -1634,7 +1634,7 @@ class MessageBuilder(Builder):
         Builder.__init__(self, **kw)
 
     def get_tree(self):
-        raise NotImplementedError, "get_tree"
+        raise NotImplementedError("get_tree")
 
     def valid_after(self, after):
         w = self.convert_items((after,))[0]
@@ -1912,8 +1912,8 @@ class UserListBuilder(QueryBuilder):
 
 class SavedBuilder(IDBuilder):
     def wrap_items(self, items):
-        categories = LinkSavesByAccount.fast_query(c.user, items).items()
-        categories += CommentSavesByAccount.fast_query(c.user, items).items()
+        categories = list(LinkSavesByAccount.fast_query(c.user, items).items())
+        categories += list(CommentSavesByAccount.fast_query(c.user, items).items())
         categories = {item[1]._id: category for item, category in categories if category}
         wrapped = QueryBuilder.wrap_items(self, items)
         for w in wrapped:

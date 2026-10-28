@@ -72,7 +72,7 @@ class HardCacheBackend(object):
                     all_enginenames.add(c)
                     enginenames_by_category[category].append(c)
 
-        assert('*' in enginenames_by_category.keys())
+        assert('*' in list(enginenames_by_category.keys()))
 
         engines_by_enginename = {}
         for enginename in all_enginenames:
@@ -84,7 +84,7 @@ class HardCacheBackend(object):
             engines_by_enginename[enginename] = table
 
         self.mapping = {}
-        for category, enginenames in enginenames_by_category.iteritems():
+        for category, enginenames in enginenames_by_category.items():
             self.mapping[category] = [ engines_by_enginename[e]
                                        for e in enginenames]
 
@@ -182,7 +182,7 @@ class HardCacheBackend(object):
             self.profile_stop(prof)
             return value
 
-        except sa.exc.IntegrityError, e:
+        except sa.exc.IntegrityError as e:
             self.profile_stop(prof)
             return self.get(category, ids, force_write_table=True)
 
@@ -329,7 +329,7 @@ def delete_expired(expiration="now", limit=5000):
 
     masters = set()
 
-    for engines in backend.mapping.values():
+    for engines in list(backend.mapping.values()):
         masters.add(engines[0])
 
     for engine in masters:

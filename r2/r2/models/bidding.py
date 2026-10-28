@@ -132,17 +132,16 @@ class Sessionized(object):
         if filter_fn is None:
             cols = cls.__table__.c
         else:
-            cols = filter(filter_fn, cls.__table__.c)
+            cols = list(filter(filter_fn, cls.__table__.c))
         for k, v in zip(cols, a):
-            if not kw.has_key(k.name):
+            if k.name not in kw:
                 args.append((k, cls._make_storable(v)))
             else:
-                raise TypeError,\
-                      "got multiple arguments for '%s'" % k.name
+                raise TypeError("got multiple arguments for '%s'" % k.name)
 
         cols = dict((x.name, x) for x in cls.__table__.c)
-        for k, v in kw.iteritems():
-            if cols.has_key(k):
+        for k, v in kw.items():
+            if k in cols:
                 args.append((cols[k], cls._make_storable(v)))
         return args
 
@@ -177,9 +176,9 @@ class Sessionized(object):
             if not res:
                 raise NoResultFound
         except NoResultFound: 
-            raise NotFound, "%s with %s" % \
+            raise NotFound("%s with %s" % \
                 (cls.__name__,
-                 ",".join("%s=%s" % x for x in args))
+                 ",".join("%s=%s" % x for x in args)))
         return res
 
     @classmethod
@@ -389,7 +388,7 @@ class PromotionWeights(Sessionized, Base):
         end_date = to_date(campaign.end_date)
         ndays = (end_date - start_date).days
         # note that end_date is not included
-        dates = [start_date + datetime.timedelta(days=i) for i in xrange(ndays)]
+        dates = [start_date + datetime.timedelta(days=i) for i in range(ndays)]
 
         sr_names = campaign.target.subreddit_names
         sr_names = {cls.filter_sr_name(sr_name) for sr_name in sr_names}

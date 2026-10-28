@@ -51,7 +51,7 @@ class tp_manager:
         if use_cache:
             if (not hasattr(template, "hash") and
                     getattr(template, "filename", None)):
-                with open(template.filename, 'r') as handle:
+                with open(template.filename, 'rb') as handle:
                     template.hash = hashlib.sha1(handle.read()).hexdigest()
             key = (cls.__name__.lower(), style)
             self.templates[key] = template

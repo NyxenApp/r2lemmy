@@ -20,7 +20,7 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from reddit_base import RedditController
+from .reddit_base import RedditController
 from r2.lib.pages import AdminPage, AdminCreddits, AdminGold
 from r2.lib.validator import nop, validate, VAdmin
 

@@ -95,7 +95,7 @@ PREFS_VALIDATORS = dict(
 
 
 def set_prefs(user, prefs):
-    for k, v in prefs.iteritems():
+    for k, v in prefs.items():
         if k == 'pref_beta' and v and not getattr(user, 'pref_beta', False):
             # If a user newly opted into beta, we want to subscribe them
             # to the beta subreddit.
@@ -116,7 +116,7 @@ def filter_prefs(prefs, user):
             if prefs.get("pref_other_theme", False):
                 prefs["pref_default_theme_sr"] = prefs["pref_other_theme"]
 
-    for pref_key in prefs.keys():
+    for pref_key in list(prefs.keys()):
         if pref_key not in user._preference_attrs:
             del prefs[pref_key]
 

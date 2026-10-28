@@ -34,7 +34,7 @@ def backfill(after=None):
 
 
 def backfill_sr(sr):
-    print "processing %s" % sr.name
+    print("processing %s" % sr.name)
     after = None
     count = 100
     q = ModAction.get_actions(sr, after=after, count=count)

@@ -72,7 +72,7 @@ class ThingTupleComparator(object):
             # can get the value to compare right out of the tuple
             v1, v2 = t1[i + 1], t2[i + 1]
             if v1 != v2:
-                return cmp(v1, v2) if isinstance(s, asc) else cmp(v2, v1)
+                return (v1 > v2) - (v1 < v2) if isinstance(s, asc) else (v2 > v1) - (v2 < v1)
         #they're equal
         return 0
 
@@ -102,8 +102,9 @@ class _CachedQueryBase(object):
         raise NotImplementedError()
 
     def _sort_data(self):
+        from functools import cmp_to_key
         comparator = ThingTupleComparator(self.sort_cols)
-        self.data.sort(cmp=comparator)
+        self.data.sort(key=cmp_to_key(comparator))
 
     def __iter__(self):
         self.fetch()
@@ -173,7 +174,7 @@ class CachedQuery(_CachedQueryBase):
             by_model[q.model].append(q)
 
         cached_queries = {}
-        for model, queries in by_model.iteritems():
+        for model, queries in by_model.items():
             pure, need_mangling = [], []
             for q in queries:
                 if not q.is_precomputed:
@@ -182,8 +183,8 @@ class CachedQuery(_CachedQueryBase):
                     need_mangling.append(q.key)
 
             mangled = model.index_mangle_keys(need_mangling)
-            fetched = model.get(pure + mangled.keys())
-            for key, values in fetched.iteritems():
+            fetched = model.get(pure + list(mangled.keys()))
+            for key, values in fetched.items():
                 key = mangled.get(key, key)
                 cached_queries[key] = values
 
@@ -481,7 +482,7 @@ def cached_query(model, filter_fn=filter_identity):
                     args = list(args)
                     args[0] = args[0]._id
 
-                if isinstance(args[0], (int, long)):
+                if isinstance(args[0], int):
                     serialized = to36(args[0])
                 else:
                     serialized = str(args[0])
@@ -517,7 +518,7 @@ def merged_cached_query(fn):
     return merge_wrapper
 
 
-class _BaseQueryCache(object):
+class _BaseQueryCache(object, metaclass=tdb_cassandra.ThingMeta):
     """The model through which cached queries to interact with Cassandra.
 
     Each cached query is stored as a distinct row in Cassandra.  The row key is
@@ -528,8 +529,6 @@ class _BaseQueryCache(object):
     CachedQuery._make_item_tuple).
 
     """
-
-    __metaclass__ = tdb_cassandra.ThingMeta
     _connection_pool = 'main'
     _extra_schema_creation_args = dict(key_validation_class=ASCII_TYPE,
                                        default_validation_class=UTF8_TYPE)
@@ -551,11 +550,11 @@ class _BaseQueryCache(object):
                                 column_count=tdb_cassandra.max_column_count)
 
         res = {}
-        for row, columns in rows.iteritems():
+        for row, columns in rows.items():
             data = []
             timestamps = []
 
-            for (key, (value, timestamp)) in columns.iteritems():
+            for (key, (value, timestamp)) in columns.items():
                 value = json.loads(value)
                 data.append((key,) + tuple(value))
                 timestamps.append((key, timestamp))
@@ -575,9 +574,9 @@ class _BaseQueryCache(object):
                                 column_count=1)
 
         res = {}
-        for key, columns in rows.iteritems():
+        for key, columns in rows.items():
             root_key = key.rsplit("/")[0]
-            index_component = columns.keys()[0]
+            index_component = list(columns.keys())[0]
             mangled = "/".join((root_key, index_component))
             res[mangled] = root_key
         return res
@@ -592,7 +591,7 @@ class _BaseQueryCache(object):
 
         """
         updates = dict((key, json.dumps(value))
-                       for key, value in columns.iteritems())
+                       for key, value in columns.items())
         mutator.insert(cls._cf, key, updates, ttl=ttl)
 
     @classmethod

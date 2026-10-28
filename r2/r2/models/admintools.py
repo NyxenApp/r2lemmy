@@ -175,9 +175,9 @@ class AdminTools(object):
                 by_aid.setdefault(thing.author_id, []).append(thing)
 
         if by_aid:
-            authors = Account._byID(by_aid.keys(), data=True, return_dict=True)
+            authors = Account._byID(list(by_aid.keys()), data=True, return_dict=True)
 
-            for aid, author_things in by_aid.iteritems():
+            for aid, author_things in by_aid.items():
                 author = authors[aid]
                 author._incr('spammer', len(author_things) if spam else -len(author_things))
 
@@ -188,8 +188,8 @@ class AdminTools(object):
                 by_srid.setdefault(thing.sr_id, []).append(thing)
 
         if by_srid:
-            srs = Subreddit._byID(by_srid.keys(), data=True, return_dict=True)
-            for sr_id, sr_things in by_srid.iteritems():
+            srs = Subreddit._byID(list(by_srid.keys()), data=True, return_dict=True)
+            for sr_id, sr_things in by_srid.items():
                 sr = srs[sr_id]
 
                 sr.last_mod_action = datetime.now(g.tz)

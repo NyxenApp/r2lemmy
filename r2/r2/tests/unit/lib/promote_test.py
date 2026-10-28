@@ -22,9 +22,9 @@ from r2.tests import RedditTestCase, NonCache
 
 
 subscriptions_srnames = ["foo", "bar"]
-subscriptions = map(lambda srname: Subreddit(name=srname), subscriptions_srnames)
+subscriptions = [Subreddit(name=srname) for srname in subscriptions_srnames]
 multi_srnames = ["bing", "bat"]
-multi_subreddits = map(lambda srname: Subreddit(name=srname), multi_srnames)
+multi_subreddits = [Subreddit(name=srname) for srname in multi_srnames]
 nice_srname = "mylittlepony"
 nsfw_srname = "pr0n"
 questionably_nsfw = "sexstories"
@@ -203,7 +203,7 @@ class TestPromoteRefunds(unittest.TestCase):
         campaign = MagicMock(spec=('total_budget_dollars',))
         campaign.total_budget_dollars = 200.
         refund_amount = get_refund_amount(campaign, self.billable_amount)
-        self.assertEquals(refund_amount,
+        self.assertEqual(refund_amount,
             campaign.total_budget_dollars - self.billable_amount)
 
     def test_get_refund_amount_rounding(self):
@@ -212,20 +212,20 @@ class TestPromoteRefunds(unittest.TestCase):
         # the refund_amount should be campaign.total_budget_dollars.
         self.campaign.refund_amount = 0.00000001
         refund_amount = get_refund_amount(self.campaign, self.billable_amount)
-        self.assertEquals(refund_amount, self.billable_amount)
+        self.assertEqual(refund_amount, self.billable_amount)
 
         self.campaign.refund_amount = 0.00999999
         refund_amount = get_refund_amount(self.campaign, self.billable_amount)
-        self.assertEquals(refund_amount, self.billable_amount)
+        self.assertEqual(refund_amount, self.billable_amount)
 
         # If campaign.refund_amount is just slightly more than a penny,
         # the refund amount should be campaign.total_budget_dollars - 0.01.
         self.campaign.refund_amount = 0.01000001
         refund_amount = get_refund_amount(self.campaign, self.billable_amount)
-        self.assertEquals(refund_amount, self.billable_amount - 0.01)
+        self.assertEqual(refund_amount, self.billable_amount - 0.01)
 
         # Even if campaign.refund_amount is just barely short of two pennies,
         # the refund amount should be campaign.total_budget_dollars - 0.01.
         self.campaign.refund_amount = 0.01999999
         refund_amount = get_refund_amount(self.campaign, self.billable_amount)
-        self.assertEquals(refund_amount, self.billable_amount - 0.01)
+        self.assertEqual(refund_amount, self.billable_amount - 0.01)

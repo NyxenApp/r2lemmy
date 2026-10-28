@@ -114,7 +114,7 @@ def monitor_mentions(comment):
             comment,
             ("inbox", "selfreply", "mention"),
         )
-        if filter(None, rels.values()):
+        if [_f for _f in list(rels.values()) if _f]:
             continue
 
         notify_mention(account, comment)

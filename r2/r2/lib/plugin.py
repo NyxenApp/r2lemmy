@@ -64,7 +64,7 @@ class Plugin(object):
             from r2.lib import js
             module_registry = js.module
 
-        for name, module in self.js.iteritems():
+        for name, module in self.js.items():
             if name not in module_registry:
                 module_registry[name] = module
             else:
@@ -93,10 +93,10 @@ class PluginLoader(object):
             entry_points = []
             for name in plugin_names:
                 try:
-                    entry_point = self.available_plugins(name).next()
+                    entry_point = next(self.available_plugins(name))
                 except StopIteration:
-                    print >> sys.stderr, ("Unable to locate plugin "
-                                          "%s. Skipping." % name)
+                    print(("Unable to locate plugin "
+                                          "%s. Skipping." % name), file=sys.stderr)
                     continue
                 else:
                     entry_points.append(entry_point)
@@ -110,8 +110,8 @@ class PluginLoader(object):
                     # if this plugin was specifically requested, fail.
                     raise e
                 else:
-                    print >> sys.stderr, ("Error loading plugin %s (%s)."
-                                          " Skipping." % (entry_point.name, e))
+                    print(("Error loading plugin %s (%s)."
+                                          " Skipping." % (entry_point.name, e)), file=sys.stderr)
                     continue
             self.plugins[entry_point.name] = plugin_cls(entry_point)
 
@@ -119,10 +119,10 @@ class PluginLoader(object):
         return len(self.plugins)
 
     def __iter__(self):
-        return self.plugins.itervalues()
+        return iter(self.plugins.values())
 
     def __reversed__(self):
-        return reversed(self.plugins.values())
+        return reversed(list(self.plugins.values()))
 
     def __getitem__(self, key):
         return self.plugins[key]

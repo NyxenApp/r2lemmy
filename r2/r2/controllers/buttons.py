@@ -20,7 +20,7 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from reddit_base import RedditController, UnloggedUser
+from .reddit_base import RedditController, UnloggedUser
 from r2.lib.pages import (ButtonLite, ButtonDemoPanel, WidgetDemoPanel,
                           BoringPage)
 from r2.lib.pages.things import wrap_links

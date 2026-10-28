@@ -20,7 +20,7 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from __future__ import with_statement
+
 from time import sleep
 from datetime import datetime
 from threading import local

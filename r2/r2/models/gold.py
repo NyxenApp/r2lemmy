@@ -95,9 +95,7 @@ indices = [index_str(gold_table, 'status', 'status'),
 create_table(gold_table, indices)
 
 
-class GoldRevenueGoalByDate(object):
-    __metaclass__ = tdb_cassandra.ThingMeta
-
+class GoldRevenueGoalByDate(object, metaclass=tdb_cassandra.ThingMeta):
     _use_db = True
     _cf_name = "GoldRevenueGoalByDate"
     _read_consistency_level = tdb_cassandra.CL.ONE
@@ -130,7 +128,7 @@ class GoldRevenueGoalByDate(object):
                 column_start=colkey,
                 column_count=1,
             )
-            return col.values()[0]
+            return list(col.values())[0]
         except NotFoundException:
             return None
 
@@ -175,7 +173,7 @@ class GildingsByThing(tdb_cassandra.View):
     @classmethod
     def get_gilder_ids(cls, thing):
         columns = cls.get_time_sorted_columns(thing._fullname)
-        return [int(account_id, 36) for account_id in columns.iterkeys()]
+        return [int(account_id, 36) for account_id in columns.keys()]
 
     @classmethod
     def create(cls, user, things):
@@ -208,7 +206,7 @@ class GildingsByDay(tdb_cassandra.View):
         key = cls._rowkey(date)
         columns = cls.get_time_sorted_columns(key)
         gildings = []
-        for name, json_blob in columns.iteritems():
+        for name, json_blob in columns.items():
             timestamp = convert_uuid_to_time(name)
             date = datetime.utcfromtimestamp(timestamp).replace(tzinfo=g.tz)
 
@@ -609,14 +607,14 @@ def creddits_lock(user):
 
 PENNIES_PER_SERVER_SECOND = {
     datetime.strptime(datestr, "%Y/%m/%d").date(): v
-    for datestr, v in g.live_config['pennies_per_server_second'].iteritems()
+    for datestr, v in g.live_config['pennies_per_server_second'].items()
 }
 
 
 def calculate_server_seconds(pennies, date):
     cutoff_dates = sorted(PENNIES_PER_SERVER_SECOND.keys())
     date = to_date(date)
-    key = max(filter(lambda cutoff_date: date >= cutoff_date, cutoff_dates))
+    key = max([cutoff_date for cutoff_date in cutoff_dates if date >= cutoff_date])
     rate = PENNIES_PER_SERVER_SECOND[key]
 
     # for simplicity all payment processor fees are $0.30 + 2.9%

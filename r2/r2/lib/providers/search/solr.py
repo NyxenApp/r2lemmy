@@ -20,14 +20,14 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-import cPickle as pickle
+import pickle as pickle
 from datetime import datetime, timedelta
 import functools
-import httplib
+import http.client
 import json
 import socket
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from lxml import etree
 from pylons import tmpl_context as c
@@ -86,7 +86,7 @@ def basic_query(query=None, bq=None, faceting=None, size=1000,
     if record_stats:
         timer = g.stats.get_timer("solrsearch_timer")
         timer.start()
-    connection = httplib.HTTPConnection(search_api, g.solr_port)
+    connection = http.client.HTTPConnection(search_api, g.solr_port)
     try:
         connection.request('GET', path)
         resp = connection.getresponse()
@@ -147,7 +147,7 @@ class SolrSearchQuery(object):
         elif syntax not in self.known_syntaxes:
             raise ValueError("Unknown search syntax: %s" % syntax)
         self.bq = None
-        self.query = filters._force_unicode(query or u'')
+        self.query = filters._force_unicode(query or '')
         self.converted_data = None
         self.syntax = syntax
 
@@ -177,7 +177,7 @@ class SolrSearchQuery(object):
         self.results = None
 
     def run(self, after=None, reverse=False, num=1000, _update=False):
-        self.bq = u''
+        self.bq = ''
         results = self._run(_update=_update)
 
         docs, hits, facets = results.docs, results.hits, results._facets
@@ -390,8 +390,8 @@ def _encode_query(query, faceting, size, start, rank, return_fields):
     facet_sort = []
     if faceting:
         params["facet"] = "true"
-        params["facet.field"] = ",".join(faceting.iterkeys())
-        for facet, options in faceting.iteritems():
+        params["facet.field"] = ",".join(iter(faceting.keys()))
+        for facet, options in faceting.items():
             facet_limit.append(options.get("count", 20))
             if "sort" in options:
                 if not options['sort'].split()[-1] in ['asc', 'desc']:
@@ -402,7 +402,7 @@ def _encode_query(query, faceting, size, start, rank, return_fields):
         params["facet.sort"] = params["facet.sort"] or 'score desc' 
     if return_fields:
         params["qf"] = ",".join(return_fields)
-    encoded_query = urllib.urlencode(params)
+    encoded_query = urllib.parse.urlencode(params)
     if getattr(g, 'solr_version', '1').startswith('4'):
         path = '/solr/%s/select?%s' % \
             (getattr(g, 'solr_core', 'collection1'), encoded_query)
@@ -436,7 +436,7 @@ class SolrSearchUploader(object):
         field = etree.SubElement(doc, "field", name='id')
         field.text = thing._fullname
 
-        for field_name, value in self.fields(thing).iteritems():
+        for field_name, value in self.fields(thing).items():
             field = etree.SubElement(doc, "field", name=field_name)
             field.text = safe_xml_str(value)
 
@@ -549,11 +549,11 @@ class SolrSearchUploader(object):
                     delta=len(warnings))
 
             if not quiet:
-                print "%s Changes: +%i -%i" % (self.__class__.__name__,
-                                               adds, deletes)
+                print("%s Changes: +%i -%i" % (self.__class__.__name__,
+                                               adds, deletes))
                 if len(warnings):
-                    print "%s Warnings: %s" % (self.__class__.__name__,
-                                               "; ".join(warnings))
+                    print("%s Warnings: %s" % (self.__class__.__name__,
+                                               "; ".join(warnings)))
 
         return cs_time    
 
@@ -566,7 +566,7 @@ class SolrSearchUploader(object):
         '''
         core = getattr(g, 'solr_core', 'collection1') 
         responses = []
-        connection = httplib.HTTPConnection(self.solr_host, self.solr_port)
+        connection = http.client.HTTPConnection(self.solr_host, self.solr_port)
         chunker = chunk_xml(docs)
         headers = {}
         headers['Content-Type'] = 'application/xml'
@@ -603,7 +603,7 @@ def chunk_xml(xml, depth=0):
         yield data
     else:
         depth += 1
-        print "WARNING: Chunking (depth=%s)" % depth
+        print("WARNING: Chunking (depth=%s)" % depth)
         half = len(xml) / 2
         left_half = xml # for ease of reading
         right_half = etree.Element(root)
@@ -639,11 +639,11 @@ def _run_changed(msgs, chan):
 
     totaltime = (datetime.now(g.tz) - start).total_seconds()
 
-    print ("%s: %d messages in %.2fs seconds (%.2fs secs waiting on "
+    print(("%s: %d messages in %.2fs seconds (%.2fs secs waiting on "
            "solr); %d duplicates, %s remaining)" %
            (start, len(changed), totaltime, solrsearch_time,
             len(changed) - len(link_fns | sr_fns),
-            msgs[-1].delivery_info.get('message_count', 'unknown')))
+            msgs[-1].delivery_info.get('message_count', 'unknown'))))
 
 
 class SolrLinkUploader(SolrSearchUploader):
@@ -724,8 +724,8 @@ def _rebuild_link_index(start_at=None, sleeptime=1, cls=Link,
         for x in range(5):
             try:
                 uploader.inject()
-            except httplib.HTTPException as err:
-                print "Got %s, sleeping %s secs" % (err, x)
+            except http.client.HTTPException as err:
+                print("Got %s, sleeping %s secs" % (err, x))
                 time.sleep(x)
                 continue
             else:
@@ -733,7 +733,7 @@ def _rebuild_link_index(start_at=None, sleeptime=1, cls=Link,
         else:
             raise err
         last_update = chunk[-1]
-        print "last updated %s" % last_update._fullname
+        print("last updated %s" % last_update._fullname)
         time.sleep(sleeptime)
 
 
@@ -746,9 +746,9 @@ rebuild_subreddit_index = functools.partial(_rebuild_link_index,
 
 def test_run_link(start_link, count=1000):
     '''Inject `count` number of links, starting with `start_link`'''
-    if isinstance(start_link, basestring):
+    if isinstance(start_link, str):
         start_link = int(start_link, 36)
-    links = Link._byID(range(start_link - count, start_link), data=True,
+    links = Link._byID(list(range(start_link - count, start_link)), data=True,
                        return_dict=False)
     uploader = SolrLinkUploader(things=links)
     return uploader.inject()
@@ -756,7 +756,7 @@ def test_run_link(start_link, count=1000):
 
 def test_run_srs(*sr_names):
     '''Inject Subreddits by name into the index'''
-    srs = Subreddit._by_name(sr_names).values()
+    srs = list(Subreddit._by_name(sr_names).values())
     uploader = SolrSubredditUploader(things=srs)
     return uploader.inject()
 

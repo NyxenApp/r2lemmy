@@ -42,20 +42,20 @@ from r2.lib.utils import (
     tup,
     UrlParser,
 )
-from account import (
+from .account import (
     Account,
     BlockedSubredditsByAccount,
     DeletedUser,
     SubredditParticipationByAccount,
 )
-from subreddit import (
+from .subreddit import (
     DefaultSR,
     DomainSR,
     FakeSubreddit,
     Subreddit,
     SubredditsActiveForFrontPage,
 )
-from printable import Printable
+from .printable import Printable
 from r2.config import extensions
 from r2.lib.memoize import memoize
 from r2.lib.wrapped import Wrapped
@@ -412,11 +412,11 @@ class Link(Thing, Printable):
 
         if style == "htmllite":
              s.extend([
-                 request.GET.has_key('twocolumn'),
+                 'twocolumn' in request.GET,
                  c.link_target,
             ])
         elif style == "xml":
-            s.append(request.GET.has_key("nothumbs"))
+            s.append("nothumbs" in request.GET)
         elif style == "compact":
             s.append(c.permalink_page)
 
@@ -523,7 +523,7 @@ class Link(Thing, Printable):
         if site_name:
             query_params["utm_name"] = site_name
 
-        query_params = {k: v for (k, v) in query_params.iteritems() if (
+        query_params = {k: v for (k, v) in query_params.items() if (
                         v is not None)}
 
         if query_params:
@@ -932,7 +932,7 @@ class Link(Thing, Printable):
                         parts = (hostname.encode("utf-8").rstrip(".").
                             split("."))
                         subparts = {".".join(parts[y:])
-                                    for y in xrange(len(parts))}
+                                    for y in range(len(parts))}
                         if subparts.intersection(banned_domains):
                             item.link_notes.append('banned domain')
 
@@ -1147,11 +1147,11 @@ class Link(Thing, Printable):
         """
         if isinstance(value, dict):
             return {cls._utf8_encode(key): cls._utf8_encode(value)
-                    for key, value in value.iteritems()}
+                    for key, value in value.items()}
         elif isinstance(value, list):
             return [cls._utf8_encode(item)
                     for item in value]
-        elif isinstance(value, unicode):
+        elif isinstance(value, str):
             return value.encode('utf-8')
         else:
             return value
@@ -1252,7 +1252,7 @@ class LinksByUrlAndSubreddit(tdb_cassandra.View):
         except tdb_cassandra.NotFoundException:
             return []
 
-        link_ids = columns.keys()
+        link_ids = list(columns.keys())
         return link_ids
 
 
@@ -1607,7 +1607,7 @@ class Comment(Thing, Printable):
                            return_dict=True, stale=True)
 
         # fetch authors
-        authors = Account._byID(set(l.author_id for l in links.values()), data=True,
+        authors = Account._byID(set(l.author_id for l in list(links.values())), data=True,
                                 return_dict=True, stale=True)
 
         #get srs for comments that don't have them (old comments)
@@ -2274,8 +2274,8 @@ class Message(Thing, Printable):
         parents = Comment._byID(parent_ids, data=True)
 
         # load full modlist for all subreddit messages
-        mods_by_srid = {sr._id: sr.moderator_ids() for sr in srs.itervalues()}
-        user_mod_sr_ids = {sr_id for sr_id, mod_ids in mods_by_srid.iteritems()
+        mods_by_srid = {sr._id: sr.moderator_ids() for sr in srs.values()}
+        user_mod_sr_ids = {sr_id for sr_id, mod_ids in mods_by_srid.items()
             if user._id in mod_ids}
 
         # special handling for mod replies to mod PMs
@@ -2290,7 +2290,7 @@ class Message(Thing, Printable):
         if mod_messages:
             parent_ids = [item.parent_id for item in mod_messages]
             parents = Message._byID(parent_ids, data=True, return_dict=True)
-            author_ids = {item.author_id for item in parents.itervalues()}
+            author_ids = {item.author_id for item in parents.values()}
             authors = Account._byID(author_ids, data=True, return_dict=True)
 
             for item in mod_messages:
@@ -2308,8 +2308,8 @@ class Message(Thing, Printable):
             queries.get_unread_subreddit_messages_multi(mod_msg_srs))
 
         # load blocked subreddits
-        sr_blocks = BlockedSubredditsByAccount.fast_query(user, srs.values())
-        blocked_srids = {sr._id for _user, sr in sr_blocks.iterkeys()}
+        sr_blocks = BlockedSubredditsByAccount.fast_query(user, list(srs.values()))
+        blocked_srids = {sr._id for _user, sr in sr_blocks.keys()}
 
         can_set_unread = (user.pref_mark_messages_read and
                             c.extension not in ("rss", "xml", "api", "json"))
@@ -2320,7 +2320,7 @@ class Message(Thing, Printable):
         if isinstance(c.site, FakeSubreddit):
             mod_sr_ids = Subreddit.reverse_moderator_ids(user)
             if len(mod_sr_ids) > 1:
-                sr_colors = dict(zip(mod_sr_ids, cycle(Subreddit.ACCENT_COLORS)))
+                sr_colors = dict(list(zip(mod_sr_ids, cycle(Subreddit.ACCENT_COLORS))))
 
         for item in wrapped:
             user_is_recipient = item.to_id == user._id
@@ -2488,7 +2488,7 @@ class Message(Thing, Printable):
 
     @property
     def subreddit_slow(self):
-        from subreddit import Subreddit
+        from .subreddit import Subreddit
         if self.sr_id:
             return Subreddit._byID(self.sr_id, data=True)
 
@@ -2698,7 +2698,7 @@ class _ThingSavesBySubreddit(tdb_cassandra.View):
         except NotFoundException:
             return []
 
-        return columns.keys()
+        return list(columns.keys())
 
     @classmethod
     def get_saved_subreddits(cls, user):
@@ -2835,7 +2835,7 @@ class LinksByImage(tdb_cassandra.View):
             columns = cls._byID(rowkey)._values()
         except NotFoundException:
             return []
-        return columns.iterkeys()
+        return iter(columns.keys())
 
 
 _CommentInbox = Relation(Account, Comment)
@@ -2944,7 +2944,7 @@ class Inbox(MultiRelation('inbox', _CommentInbox, _MessageInbox)):
 
         # _fast_query returns a dict of {(t1, t2, name): rel}, with rel of None
         # if the relation doesn't exist
-        inbox_rels = [inbox_rel for inbox_rel in res.itervalues() if inbox_rel]
+        inbox_rels = [inbox_rel for inbox_rel in res.values() if inbox_rel]
         return inbox_rels
 
     @classmethod
@@ -2958,7 +2958,7 @@ class Inbox(MultiRelation('inbox', _CommentInbox, _MessageInbox)):
                 inbox_rel.new = unread
                 inbox_rel._commit()
 
-        for user, unread_count in unread_count_by_user.iteritems():
+        for user, unread_count in unread_count_by_user.items():
             if unread_count == 0:
                 continue
 
@@ -3001,7 +3001,7 @@ class ModeratorInbox(Relation(Subreddit, Message)):
         )
         # _fast_query returns a dict of {(t1, t2, name): rel}, with rel of None
         # if the relation doesn't exist
-        inbox_rels = [inbox_rel for inbox_rel in res.itervalues() if inbox_rel]
+        inbox_rels = [inbox_rel for inbox_rel in res.values() if inbox_rel]
         return inbox_rels
 
     @classmethod
@@ -3080,7 +3080,7 @@ class CommentVisitsByUser(tdb_cassandra.View):
         except NotFoundException:
             return []
         # NOTE: dates return from pycassa are UTC but missing their timezone
-        dates = [date.replace(tzinfo=pytz.UTC) for date in columns.keys()]
+        dates = [date.replace(tzinfo=pytz.UTC) for date in list(columns.keys())]
         return sorted(dates)
 
     @classmethod

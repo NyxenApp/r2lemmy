@@ -23,9 +23,9 @@
 """Pylons middleware initialization"""
 import importlib
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import tempfile
-import urlparse
+import urllib.parse
 from threading import Lock
 import itertools
 import simplejson
@@ -110,9 +110,9 @@ def error_mapper(code, message, environ, global_conf=None, **kw):
 
         extension = environ.get("extension")
         if extension:
-            url = '/error/document/.%s?%s' % (extension, urllib.urlencode(d))
+            url = '/error/document/.%s?%s' % (extension, urllib.parse.urlencode(d))
         else:
-            url = '/error/document/?%s' % (urllib.urlencode(d))
+            url = '/error/document/?%s' % (urllib.parse.urlencode(d))
         return url
 
 
@@ -248,7 +248,7 @@ class DomainListingMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        if not environ.has_key('subreddit'):
+        if 'subreddit' not in environ:
             path = environ['PATH_INFO']
             domain, rest = path_info_split(path)
             if domain == "domain" and rest:
@@ -452,8 +452,8 @@ class RedditApp(PylonsApp):
 
         if not g.running_as_script:
             controllers_iter = itertools.chain(
-                controllers._reddit_controllers.itervalues(),
-                controllers._plugin_controllers.itervalues(),
+                iter(controllers._reddit_controllers.values()),
+                iter(controllers._plugin_controllers.values()),
             )
             for controller in controllers_iter:
                 csrf.check_controller_csrf_prevention(controller)
